@@ -67,8 +67,8 @@ const Login = () => {
                     }}>
                         <Truck size={32} color="white" />
                     </div>
-                    <h1>{step === 1 ? 'Welcome' : 'Verify OTP'}</h1>
-                    <p style={{ color: 'var(--text-dim)' }}>{step === 1 ? 'Enter mobile number to continue' : `OTP sent to ${mobile}`}</p>
+                    <h1>Welcome</h1>
+                    <p style={{ color: 'var(--text-dim)' }}>Enter credentials to continue</p>
                 </div>
 
                 <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
