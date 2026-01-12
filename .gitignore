@@ -1,0 +1,11 @@
+
+node_modules
+dist
+.env
+.DS_Store
+coverage
+npm-debug.log
+test_output.txt
+test_output_2.txt
+test_success.txt
+*.log

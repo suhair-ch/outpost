@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for Authentication
+model User {
+  id        Int      @id @default(autoincrement())
+  mobile    String   @unique
+  role      String   // 'SUPER_ADMIN', 'DISTRICT_ADMIN', 'SHOP', 'DRIVER'
+  district  String?  // For DISTRICT_ADMIN
+  password  String?  // Hashed password
+  otp       String?  // Mock OTP storage
+  status    String   @default("ACTIVE") // ACTIVE, INVITED
+  createdAt DateTime @default(now())
+}
+
+model Shop {
+  id              Int      @id @default(autoincrement())
+  shopName        String
+  ownerName       String
+  mobileNumber    String   @unique
+  district        String
+  commission      Float    @default(0.0) // Commission per parcel
+  status          String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt       DateTime @default(now())
+  
+  // Relations
+  sentParcels     Parcel[] @relation("SourceShop")
+  settlements     Settlement[]
+}
+
+model Driver {
+  id        Int      @id @default(autoincrement())
+  name      String
+  mobile    String   @unique
+  district  String?  // Driver's operating district
+  createdAt DateTime @default(now())
+  
+  routes    Route[]
+}
+
+model Parcel {
+  id                  Int      @id @default(autoincrement())
+  senderName          String
+  senderMobile        String
+  receiverName        String
+  receiverMobile      String
+  
+  sourceShopId        Int
+  sourceShop          Shop     @relation("SourceShop", fields: [sourceShopId], references: [id])
+  
+  district            String   @default("Unknown") // Enforced District Ownership
+  destinationDistrict String
+  parcelSize          String   // S, M, L
+  paymentMode         String   // CASH, UPI
+  price               Float
+  
+  status              String   @default("BOOKED") // BOOKED, COLLECTED_FROM_SHOP, AT_CENTRAL_HUB, DISPATCHED, ARRIVED_AT_DESTINATION, DELIVERED
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // New Fields for Phase 2
+  deliveryOtp         String?
+  
+  routeId             Int?
+  route               Route?   @relation(fields: [routeId], references: [id])
+}
+
+model Route {
+  id        Int      @id @default(autoincrement())
+  routeName String
+  date      DateTime @default(now())
+  
+  district  String   @default("Unknown") // Enforced District Ownership
+
+  driverId  Int
+  driver    Driver   @relation(fields: [driverId], references: [id])
+  
+  status    String   @default("OPEN") // OPEN, CLOSED
+  parcels   Parcel[]
+  
+  createdAt DateTime @default(now())
+}
+
+model Settlement {
+  id              Int      @id @default(autoincrement())
+  
+  district        String   @default("Unknown") // Enforced District Ownership
+
+  shopId          Int
+  shop            Shop     @relation(fields: [shopId], references: [id])
+  
+  totalCommission Float
+  periodStart     DateTime
+  periodEnd       DateTime
+  
+  status          String   @default("PENDING") // PENDING, PAID
+  
+  createdAt       DateTime @default(now())
+}
