@@ -24,6 +24,7 @@ model User {
 
 model Shop {
   id              Int      @id @default(autoincrement())
+  shopCode        String   @unique // Generated ID (TVM-SHP-0045)
   shopName        String
   ownerName       String
   mobileNumber    String   @unique

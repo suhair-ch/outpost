@@ -1,20 +1,28 @@
 
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
     console.log('Seeding Database...');
 
+    // Hash Password
+    const hashedPassword = await bcrypt.hash('1234', 10);
+
     // Create Admin User
     const admin = await prisma.user.upsert({
         where: { mobile: '9999999999' },
-        update: {},
+        update: {
+            password: hashedPassword, // Ensure password is set logic
+            role: 'SUPER_ADMIN'
+        },
         create: {
             mobile: '9999999999',
-            role: 'SUPER_ADMIN', // Ensuring this matches Role.ADMIN (SUPER_ADMIN)
+            role: 'SUPER_ADMIN',
             status: 'ACTIVE',
-            otp: '1234' // Mock OTP
+            password: hashedPassword,
+            otp: null
         }
     });
 

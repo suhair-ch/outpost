@@ -9,6 +9,35 @@ import { sendSms } from '../services/smsService';
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
+// Create User (District Admin or other roles)
+export const inviteUser = async (req: AuthRequest, res: Response) => {
+    try {
+        const { mobile, name, district, role } = req.body;
+        // Only Super Admin can create District Admin
+        if (req.user?.role !== 'SUPER_ADMIN' && role === 'DISTRICT_ADMIN') {
+            return res.status(403).json({ error: 'Only Super Admin can create District Admin' });
+        }
+
+        const hashedPassword = await bcrypt.hash('1234', 10);
+
+        const user = await prisma.user.create({
+            data: {
+                mobile,
+                role: role || 'DISTRICT_ADMIN', // Default to DA if not specified? Or strictly required.
+                district: district, // Required for DA
+                status: 'ACTIVE',
+                password: hashedPassword,
+                otp: null
+            }
+        });
+
+        res.json({ message: 'User created successfully', user });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to create user' });
+    }
+};
+
 export const sendOtp = async (req: AuthRequest, res: Response) => {
     const { mobile } = req.body;
     const otp = '1234'; // For MVP we are keeping static OTP, but in real life we would generate random
@@ -39,25 +68,18 @@ export const login = async (req: AuthRequest, res: Response) => {
         console.log('User Lookup Result: FOUND', user.id, user.role);
 
         // Authentication Logic
-        if (password) {
-            // Password Flow
-            if (!user.password) {
-                return res.status(400).json({ error: 'Password not set. Use OTP.' });
-            }
-            const valid = await bcrypt.compare(password, user.password);
-            if (!valid) {
-                return res.status(401).json({ error: 'Invalid password' });
-            }
-        } else {
-            // OTP Flow
-            // In real app, verify against stored OTP. For MVP, we check '1234'
-            // If we generated a random OTP in sendOtp, we should verify that. 
-            // For simplicity/MVP consistency with previous steps, we accept '1234'.
-            // OPTIONAL: logic to verify db stored OTP if user.otp exists
+        if (!password) {
+            return res.status(400).json({ error: 'Password is required' });
+        }
 
-            if (otp !== '1234') {
-                return res.status(400).json({ error: 'Invalid OTP' });
-            }
+        // Strict Password Check
+        if (!user.password) {
+            return res.status(400).json({ error: 'Account not set up for password login. Contact Admin.' });
+        }
+
+        const valid = await bcrypt.compare(password, user.password);
+        if (!valid) {
+            return res.status(401).json({ error: 'Invalid Credentials' });
         }
 
         let shopId: number | undefined;
