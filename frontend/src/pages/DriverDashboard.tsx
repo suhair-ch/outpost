@@ -22,7 +22,7 @@ const DriverDashboard = () => {
         setLoading(true);
         try {
             const { data } = await client.get('/routes');
-            setRoutes(data);
+            // setRoutes(data); // Unused state removed
             // Auto-select the first open route
             const open = data.find((r: any) => r.status === 'OPEN');
             if (open) setActiveRoute(open);
