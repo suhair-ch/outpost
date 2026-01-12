@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Search, Filter, Package, MapPin } from 'lucide-react';
+import { Search, Package, MapPin } from 'lucide-react';
 import client from '../api/client';
 
 import { useSearchParams } from 'react-router-dom';

@@ -4,12 +4,13 @@ import client from '../api/client';
 import { Truck, MapPin, CheckCircle, Store } from 'lucide-react';
 
 const DriverDashboard = () => {
-    const [routes, setRoutes] = useState<any[]>([]);
     const [activeRoute, setActiveRoute] = useState<any>(null);
     const [loading, setLoading] = useState(false);
 
     // OTP Modal State
     const [showOtpModal, setShowOtpModal] = useState(false);
+    // const [stats, setStats] = useState({ assigned: 0, delivered: 0, pending: 0 }); // Unused
+    const [routes, setRoutes] = useState<any[]>([]);
     const [selectedParcelId, setSelectedParcelId] = useState('');
     const [otp, setOtp] = useState('');
 

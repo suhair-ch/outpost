@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Plus, Search, Truck, Phone } from 'lucide-react';
+import { Plus, Truck, Phone } from 'lucide-react';
 import client from '../api/client';
 
 const Drivers = () => {

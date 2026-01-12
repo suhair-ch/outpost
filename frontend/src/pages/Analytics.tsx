@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { BarChart3, TrendingUp, Package } from 'lucide-react';
+import { TrendingUp, Package } from 'lucide-react';
 import client from '../api/client';
 
 const Analytics = () => {

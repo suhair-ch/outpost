@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Map, Truck, Package, Check } from 'lucide-react';
+import { Truck, Package, Check } from 'lucide-react';
 import client from '../api/client';
 
 const CreateRoute = () => {

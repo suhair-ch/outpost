@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Map, Truck, Package, CheckCircle, XCircle } from 'lucide-react';
+import { Truck, Plus, Package, XCircle } from 'lucide-react';
 import client from '../api/client';
 
 const Routes = () => {

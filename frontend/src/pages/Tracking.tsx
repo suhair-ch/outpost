@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import client from '../api/client';
-import { Search, Package, MapPin, Calendar, CheckCircle } from 'lucide-react';
+import { Search, Package, CheckCircle } from 'lucide-react';
 
 const Tracking = () => {
     const [parcelId, setParcelId] = useState('');
