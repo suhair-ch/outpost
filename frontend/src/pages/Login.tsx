@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Truck, Lock } from 'lucide-react';
 import client from '../api/client';
 
@@ -8,26 +8,10 @@ import { Role } from '../types';
 
 const Login = () => {
     const navigate = useNavigate();
-    const [step, setStep] = useState(1); // 1: Mobile, 2: OTP
     const [mobile, setMobile] = useState('');
-    const [otp, setOtp] = useState('');
-    // const [password, setPassword] = useState(''); // Removing Password logic for simple MVP OTP flow unless requested
+    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-
-    const handleSendOtp = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
-        try {
-            await client.post('/auth/send-otp', { mobile });
-            setStep(2);
-        } catch (err: any) {
-            setError(err.response?.data?.error || 'Failed to send OTP');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,8 +19,8 @@ const Login = () => {
         setError('');
 
         try {
-            // Login with OTP
-            const { data } = await client.post('/login', { mobile, otp });
+            // Login with Password
+            const { data } = await client.post('/login', { mobile, password });
 
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
@@ -87,38 +71,34 @@ const Login = () => {
                     <p style={{ color: 'var(--text-dim)' }}>{step === 1 ? 'Enter mobile number to continue' : `OTP sent to ${mobile}`}</p>
                 </div>
 
-                <form onSubmit={step === 1 ? handleSendOtp : handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
-                    {step === 1 && (
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Mobile Number</label>
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Mobile Number</label>
+                        <input
+                            type="text"
+                            className="input-field"
+                            placeholder="9999999999"
+                            value={mobile}
+                            onChange={(e) => setMobile(e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Password</label>
+                        <div className="input-field" style={{ display: 'flex', alignItems: 'center', padding: '0 1rem', gap: '0.5rem' }}>
+                            <Lock size={16} color="var(--text-dim)" />
                             <input
-                                type="text"
-                                className="input-field"
-                                placeholder="9999999999"
-                                value={mobile}
-                                onChange={(e) => setMobile(e.target.value)}
+                                type="password"
+                                style={{ background: 'transparent', border: 'none', color: 'white', flex: 1, outline: 'none' }}
+                                placeholder="Enter Password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 required
                             />
                         </div>
-                    )}
-
-                    {step === 2 && (
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Enter OTP</label>
-                            <div className="input-field" style={{ display: 'flex', alignItems: 'center', padding: '0 1rem', gap: '0.5rem' }}>
-                                <Lock size={16} color="var(--text-dim)" />
-                                <input
-                                    type="text"
-                                    style={{ background: 'transparent', border: 'none', color: 'white', flex: 1, outline: 'none' }}
-                                    placeholder="Enter 4-digit OTP"
-                                    value={otp}
-                                    onChange={(e) => setOtp(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
-                    )}
+                    </div>
 
                     {error && <div style={{ color: '#ef4444', fontSize: '0.9rem', textAlign: 'center' }}>{error}</div>}
 
@@ -128,21 +108,11 @@ const Login = () => {
                         style={{ justifyContent: 'center', marginTop: '1rem' }}
                         disabled={loading}
                     >
-                        {loading ? 'Processing...' : (step === 1 ? 'Get OTP' : 'Login')}
+                        {loading ? 'Logging in...' : 'Login'}
                     </button>
 
-                    {step === 2 && (
-                        <button
-                            type="button"
-                            onClick={() => setStep(1)}
-                            style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.9rem' }}
-                        >
-                            Change Mobile Number
-                        </button>
-                    )}
-
                     <div style={{ textAlign: 'center', marginTop: '1rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>
-                        New Partner? <Link to="/signup" style={{ color: 'var(--primary)', fontWeight: 600 }}>Create Account</Link>
+                        Partner Login
                     </div>
                 </form>
             </div>
