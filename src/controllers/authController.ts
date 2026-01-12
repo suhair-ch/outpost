@@ -121,42 +121,7 @@ export const verifyOtp = async (req: AuthRequest, res: Response) => {
 };
 
 // NEW: Invite User (Admin/DA only)
-export const inviteUser = async (req: AuthRequest, res: Response) => {
-    try {
-        const { mobile, role, district } = req.body;
-        const admin = req.user;
-
-        // Validation
-        if (!mobile || !role) return res.status(400).json({ error: 'Mobile and Role are required' });
-
-        // Permission Check
-        if (admin?.role === 'DISTRICT_ADMIN') {
-            if (role !== 'SHOP') return res.status(403).json({ error: 'DA can only invite Shops' });
-            // For now, DA's district is implicit, but we can verify if they try to set another district
-        }
-
-        // Check if user exists
-        const existing = await prisma.user.findUnique({ where: { mobile } });
-        if (existing) {
-            return res.status(400).json({ error: 'User already exists' });
-        }
-
-        // Create Invited User
-        const user = await prisma.user.create({
-            data: {
-                mobile,
-                role,
-                district: district || (admin as any).district, // If DA, use their district
-                status: 'INVITED'
-            }
-        });
-
-        res.json({ message: 'User invited successfully', user });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Invite failed' });
-    }
-}
+// Duplicate function removed
 
 // Updated: Shop Sign Up (Invite Claim)
 export const signup = async (req: AuthRequest, res: Response) => {
