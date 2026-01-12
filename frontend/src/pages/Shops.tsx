@@ -33,7 +33,7 @@ const Shops = () => {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await client.post('/shops/create', formData);
+            await client.post('/shops', formData);
             setShowModal(false);
             setFormData({ shopName: '', ownerName: '', mobileNumber: '', district: '', commission: 0 });
             fetchShops(); // Refresh list

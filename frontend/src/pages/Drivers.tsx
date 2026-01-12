@@ -28,7 +28,7 @@ const Drivers = () => {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await client.post('/drivers/create', formData);
+            await client.post('/drivers', formData);
             setShowModal(false);
             setFormData({ name: '', mobile: '' });
             fetchDrivers();
