@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const client = axios.create({
-    baseURL: 'http://localhost:3006/api',
+    baseURL: 'https://outpostfastcourier.onrender.com/api',
     // headers: { 'Bypass-Tunnel-Reminder': 'true' } // Not needed for localhost
 });
 
