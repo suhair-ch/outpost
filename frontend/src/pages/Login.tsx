@@ -7,6 +7,7 @@ import client from '../api/client';
 import { Role } from '../types';
 
 const Login = () => {
+    // Phase 2: Strict Login Flow (Phone + Password)
     const navigate = useNavigate();
     const [mobile, setMobile] = useState('');
     const [password, setPassword] = useState('');
