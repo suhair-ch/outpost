@@ -10,7 +10,7 @@ const DriverDashboard = () => {
     // OTP Modal State
     const [showOtpModal, setShowOtpModal] = useState(false);
     // const [stats, setStats] = useState({ assigned: 0, delivered: 0, pending: 0 }); // Unused
-    const [routes, setRoutes] = useState<any[]>([]);
+    // const [routes, setRoutes] = useState<any[]>([]); // Unused
     const [selectedParcelId, setSelectedParcelId] = useState('');
     const [otp, setOtp] = useState('');
 
