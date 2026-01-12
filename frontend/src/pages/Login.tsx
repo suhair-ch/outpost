@@ -68,8 +68,8 @@ const Login = () => {
                     }}>
                         <Truck size={32} color="white" />
                     </div>
-                    <h1>Welcome</h1>
-                    <p style={{ color: 'var(--text-dim)' }}>Enter credentials to continue</p>
+                    <h1>Welcome V2</h1>
+                    <p style={{ color: 'var(--text-dim)' }}>Password Login</p>
                 </div>
 
                 <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
