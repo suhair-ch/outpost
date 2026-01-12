@@ -172,8 +172,14 @@ export const signup = async (req: AuthRequest, res: Response) => {
             const finalDistrict = (user as any).district || district || 'Unknown';
             console.log('Creating Shop with District:', finalDistrict);
 
+            // Generate Shop Code
+            const distCode = (finalDistrict || 'KER').substring(0, 3).toUpperCase();
+            const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+            const shopCode = `${distCode}-SHP-${randomSuffix}`;
+
             const shop = await tx.shop.create({
                 data: {
+                    shopCode,
                     shopName,
                     ownerName,
                     mobileNumber: mobile, // Link by mobile
