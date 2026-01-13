@@ -61,6 +61,28 @@ async function runTests() {
         console.log("✅ DA Status verified as INVITED");
     }
 
+    // 2.1 Negative Test: DA invites DA
+    console.log("Testing Negative: DA invites DA...");
+    const reqNeg1: any = {
+        body: { mobile: `fake${randomSuffix}`, role: 'DISTRICT_ADMIN', district: 'Trivandrum' },
+        user: { role: 'DISTRICT_ADMIN', district: 'Trivandrum' }
+    };
+    const resNeg1 = mockRes();
+    await inviteUser(reqNeg1, resNeg1);
+    if (resNeg1.statusCode === 403) console.log("✅ Blocked DA -> DA invite");
+    else console.error("❌ Failed to block DA -> DA invite", resNeg1.statusCode);
+
+    // 2.2 Negative Test: Super Admin invites Shop
+    console.log("Testing Negative: Super Admin invites Shop...");
+    const reqNeg2: any = {
+        body: { mobile: `fake2${randomSuffix}`, role: 'SHOP' },
+        user: { role: 'SUPER_ADMIN' }
+    };
+    const resNeg2 = mockRes();
+    await inviteUser(reqNeg2, resNeg2);
+    if (resNeg2.statusCode === 403) console.log("✅ Blocked SA -> Shop invite");
+    else console.error("❌ Failed to block SA -> Shop invite", resNeg2.statusCode);
+
     // 3. Test: District Admin Invites Shop
     console.log("Testing: District Admin invites Shop...");
     // Need to login as DA first? No, we mock req.user
@@ -121,6 +143,17 @@ async function runTests() {
     if (shopFinal?.status === 'ACTIVE' && shopEntry) {
         console.log("✅ Shop flow verified completely!");
     }
+
+    // 5. Negative Test: Shop invites anyone
+    console.log("Testing Negative: Shop invites anyone...");
+    const reqNeg3: any = {
+        body: { mobile: `fake3${randomSuffix}`, role: 'SHOP' },
+        user: { role: 'SHOP' }
+    };
+    const resNeg3 = mockRes();
+    await inviteUser(reqNeg3, resNeg3);
+    if (resNeg3.statusCode === 403) console.log("✅ Blocked Shop -> User invite");
+    else console.error("❌ Failed to block Shop -> User invite", resNeg3.statusCode);
 }
 
 runTests()

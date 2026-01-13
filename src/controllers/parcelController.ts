@@ -10,7 +10,7 @@ export const bookParcel = async (req: AuthRequest, res: Response) => {
     try {
         const {
             senderName, senderMobile, receiverName, receiverMobile,
-            destinationDistrict, parcelSize, paymentMode, price
+            destinationDistrict, destinationArea, parcelSize, paymentMode, price
         } = req.body;
 
         const sourceShopId = req.user?.shopId;
@@ -38,7 +38,7 @@ export const bookParcel = async (req: AuthRequest, res: Response) => {
         const parcel = await prisma.parcel.create({
             data: {
                 senderName, senderMobile, receiverName, receiverMobile,
-                destinationDistrict, parcelSize, paymentMode, price,
+                destinationDistrict, destinationArea, parcelSize, paymentMode, price,
                 sourceShopId: Number(finalShopId),
                 district: shop.district, // STRICT STAMPING
                 status: 'BOOKED',

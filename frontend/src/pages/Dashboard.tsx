@@ -165,7 +165,7 @@ const InviteManager = () => {
                     </div>
                 </div>
 
-                {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') ? (
+                {(userRole === 'SUPER_ADMIN') ? (
                     <div>
                         <label style={{ display: 'block', marginBottom: '0.6rem', fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>User Role</label>
                         <div className="input-group" style={{ marginBottom: 0, background: 'rgba(15, 23, 42, 0.4)' }}>
@@ -186,17 +186,19 @@ const InviteManager = () => {
                             >
                                 <option value="" style={{ background: '#1e293b' }}>Select Role</option>
                                 <option value="DISTRICT_ADMIN" style={{ background: '#1e293b' }}>District Admin</option>
-                                <option value="SHOP" style={{ background: '#1e293b' }}>Shop Owner</option>
                             </select>
                         </div>
                     </div>
                 ) : (
                     <div style={{ paddingBottom: '1rem', color: 'var(--text-dim)', fontSize: '0.95rem' }}>
                         Inviting <strong>Shop Owner</strong>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>
+                            Location: Inherited from your District
+                        </div>
                     </div>
                 )}
 
-                {role === 'DISTRICT_ADMIN' && (
+                {role === 'DISTRICT_ADMIN' && userRole === 'SUPER_ADMIN' && (
                     <div style={{ gridColumn: '1 / -1' }}>
                         <label style={{ display: 'block', marginBottom: '0.6rem', fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assigned District</label>
                         <div className="input-group" style={{ marginBottom: 0, background: 'rgba(15, 23, 42, 0.4)' }}>
@@ -204,7 +206,7 @@ const InviteManager = () => {
                                 type="text"
                                 className="input-field"
                                 value={district} onChange={e => setDistrict(e.target.value)}
-                                placeholder="e.g. Ernakulam"
+                                placeholder="e.g. Thiruvananthapuram"
                                 style={{ padding: '0.85rem 1rem', fontSize: '1rem' }}
                             />
                         </div>

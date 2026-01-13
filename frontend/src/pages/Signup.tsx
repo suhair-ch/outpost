@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { UserPlus, ShoppingBag, Store, MapPin, Lock } from 'lucide-react';
+import { UserPlus, ShoppingBag, Store, Lock } from 'lucide-react';
 import client from '../api/client';
 
 const Signup = () => {
@@ -10,8 +10,7 @@ const Signup = () => {
         shopName: '',
         ownerName: '',
         mobile: '',
-        password: '',
-        district: ''
+        password: ''
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -101,15 +100,8 @@ const Signup = () => {
                         />
                     </div>
 
-                    <div className="input-group">
-                        <MapPin size={20} style={{ margin: '0 1rem', color: 'var(--text-dim)' }} />
-                        <input
-                            type="text"
-                            placeholder="District"
-                            required
-                            value={formData.district}
-                            onChange={e => setFormData({ ...formData, district: e.target.value })}
-                        />
+                    <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '1rem', color: 'var(--text-dim)', fontSize: '0.9rem', textAlign: 'center' }}>
+                        Location assigned by Invite
                     </div>
 
                     <div className="input-group">

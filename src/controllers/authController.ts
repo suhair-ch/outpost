@@ -16,25 +16,31 @@ export const inviteUser = async (req: AuthRequest, res: Response) => {
         const currentUserRole = req.user?.role;
         const userDistrict = (req.user as any)?.district;
 
-        // Permission Checks
-        if (role === 'DISTRICT_ADMIN') {
-            if (currentUserRole !== 'SUPER_ADMIN') {
-                return res.status(403).json({ error: 'Only Super Admin can invite District Admin' });
-            }
-        } else if (role === 'SHOP') {
-            if (currentUserRole !== 'SUPER_ADMIN' && currentUserRole !== 'DISTRICT_ADMIN') {
-                return res.status(403).json({ error: 'Unauthorized to invite Shops' });
-            }
-        } else {
-            return res.status(400).json({ error: 'Invalid role specified' });
+        // Strict Role Hierarchy Implementation
+        let finalDistrict = district;
+
+        if (currentUserRole === 'SHOP') {
+            return res.status(403).json({ error: 'Shops are not authorized to invite users.' });
         }
 
-        // Determine District
-        let finalDistrict = district;
+        if (currentUserRole === 'SUPER_ADMIN') {
+            if (role !== 'DISTRICT_ADMIN') {
+                return res.status(403).json({ error: 'Super Admin can ONLY invite District Admins.' });
+            }
+            if (!district) {
+                return res.status(400).json({ error: 'District is required when inviting a District Admin.' });
+            }
+            // finalDistrict remains as passed in body
+        }
+
         if (currentUserRole === 'DISTRICT_ADMIN') {
-            // District Admin can only invite for their district
+            if (role !== 'SHOP') {
+                return res.status(403).json({ error: 'District Admin can ONLY invite Shops.' });
+            }
+
+            // Strict Inheritance: DA cannot let user choose district
             if (!userDistrict) {
-                return res.status(500).json({ error: 'Admin district not found' });
+                return res.status(500).json({ error: 'Your account does not have a valid District assigned.' });
             }
             finalDistrict = userDistrict;
         }

@@ -29,6 +29,7 @@ model Shop {
   ownerName       String
   mobileNumber    String   @unique
   district        String
+  area            String?  // Exact Post Office/Area
   commission      Float    @default(0.0) // Commission per parcel
   status          String   @default("ACTIVE") // ACTIVE, INACTIVE
   createdAt       DateTime @default(now())
@@ -60,6 +61,7 @@ model Parcel {
   
   district            String   @default("Unknown") // Enforced District Ownership
   destinationDistrict String
+  destinationArea     String?  // Target Area
   parcelSize          String   // S, M, L
   paymentMode         String   // CASH, UPI
   price               Float
@@ -92,6 +94,7 @@ model Route {
   createdAt DateTime @default(now())
 }
 
+
 model Settlement {
   id              Int      @id @default(autoincrement())
   
@@ -107,4 +110,25 @@ model Settlement {
   status          String   @default("PENDING") // PENDING, PAID
   
   createdAt       DateTime @default(now())
+}
+
+model Area {
+  id              Int      @id @default(autoincrement())
+  name            String
+  normalizedName  String
+  district        String
+  pincode         String?   // nullable
+  state           String    @default("Kerala")
+  source          AreaSource @default(INDIA_POST)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime @default(now())
+
+  @@index([district])
+  @@unique([normalizedName, district])
+}
+
+enum AreaSource {
+  INDIA_POST
+  CENSUS
+  EC
 }

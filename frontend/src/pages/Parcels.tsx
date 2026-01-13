@@ -4,6 +4,7 @@ import { Search, Package, MapPin } from 'lucide-react';
 import client from '../api/client';
 
 import { useSearchParams } from 'react-router-dom';
+import LocationSelector from '../components/LocationSelector';
 
 const Parcels = () => {
     const [searchParams] = useSearchParams();
@@ -50,7 +51,8 @@ const Parcels = () => {
     const [formData, setFormData] = useState({
         senderName: '', senderMobile: '',
         receiverName: '', receiverMobile: '',
-        destinationDistrict: '', parcelSize: 'S', price: 50, paymentMode: 'CASH'
+        destinationDistrict: '', destinationArea: '',
+        parcelSize: 'S', price: 50, paymentMode: 'CASH'
     });
 
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -63,7 +65,7 @@ const Parcels = () => {
             setLastBookedParcel(data); // Capture parcel data (with OTP)
             setShowModal(false);
             setShowSuccessModal(true); // Show Success Modal
-            setFormData({ senderName: '', senderMobile: '', receiverName: '', receiverMobile: '', destinationDistrict: '', parcelSize: 'S', price: 50, paymentMode: 'CASH' });
+            setFormData({ senderName: '', senderMobile: '', receiverName: '', receiverMobile: '', destinationDistrict: '', destinationArea: '', parcelSize: 'S', price: 50, paymentMode: 'CASH' });
             fetchParcels();
         } catch (error: any) {
             alert(error.response?.data?.error || 'Failed to book parcel');
@@ -139,6 +141,7 @@ const Parcels = () => {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                         <MapPin size={14} color="var(--primary)" />
                                         {parcel.destinationDistrict}
+                                        {parcel.destinationArea && <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>({parcel.destinationArea})</span>}
                                     </div>
                                 </td>
                                 <td style={{ padding: '1rem' }}>
@@ -191,7 +194,11 @@ const Parcels = () => {
                                 <input className="input-field" placeholder="Receiver Name" required value={formData.receiverName} onChange={e => setFormData({ ...formData, receiverName: e.target.value })} />
                                 <input className="input-field" placeholder="Receiver Mobile" required value={formData.receiverMobile} onChange={e => setFormData({ ...formData, receiverMobile: e.target.value })} />
                             </div>
-                            <input className="input-field" placeholder="Destination District" required value={formData.destinationDistrict} onChange={e => setFormData({ ...formData, destinationDistrict: e.target.value })} />
+
+                            <LocationSelector
+                                className="location-selector"
+                                onSelect={(loc) => setFormData({ ...formData, destinationDistrict: loc.district, destinationArea: loc.area })}
+                            />
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                                 <select className="input-field" value={formData.parcelSize} onChange={e => setFormData({ ...formData, parcelSize: e.target.value })}>

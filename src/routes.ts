@@ -9,6 +9,7 @@ import * as settlementController from './controllers/settlementController';
 import * as dashboardController from './controllers/dashboardController';
 import * as authController from './controllers/authController';
 import { trackParcel } from './controllers/trackingController';
+import * as areaController from './controllers/areaController';
 import { Role } from './types';
 
 const router = Router();
@@ -59,6 +60,10 @@ router.post('/settlements/mark-paid', authenticate, requireRole([Role.ADMIN, Rol
 // Dashboard
 router.get('/dashboard/today', authenticate, requireRole([Role.ADMIN, Role.DISTRICT_ADMIN]), dashboardController.getDailyStats);
 router.get('/dashboard/districts', authenticate, requireRole([Role.ADMIN, Role.DISTRICT_ADMIN]), dashboardController.getDistrictStats); // Allow District Admin (scoped)
+
+// Locations (Public or Auth?) - Let's make it public for Signup, or Auth for internal? Signup needs it public.
+router.get('/locations/districts', areaController.getDistricts);
+router.get('/locations/areas', areaController.getAreas);
 
 
 export default router;
