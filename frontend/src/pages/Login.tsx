@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Truck, Lock } from 'lucide-react';
 import client from '../api/client';
 
@@ -113,7 +113,7 @@ const Login = () => {
                     </button>
 
                     <div style={{ textAlign: 'center', marginTop: '1rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>
-                        Partner Login
+                        Have an invite? <Link to="/signup" style={{ color: 'var(--primary)', fontWeight: 600 }}>Claim Account</Link>
                     </div>
                 </form>
             </div>

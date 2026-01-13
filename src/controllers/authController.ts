@@ -13,28 +13,56 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 export const inviteUser = async (req: AuthRequest, res: Response) => {
     try {
         const { mobile, name, district, role } = req.body;
-        // Only Super Admin can create District Admin
-        if (req.user?.role !== 'SUPER_ADMIN' && role === 'DISTRICT_ADMIN') {
-            return res.status(403).json({ error: 'Only Super Admin can create District Admin' });
+        const currentUserRole = req.user?.role;
+        const userDistrict = (req.user as any)?.district;
+
+        // Permission Checks
+        if (role === 'DISTRICT_ADMIN') {
+            if (currentUserRole !== 'SUPER_ADMIN') {
+                return res.status(403).json({ error: 'Only Super Admin can invite District Admin' });
+            }
+        } else if (role === 'SHOP') {
+            if (currentUserRole !== 'SUPER_ADMIN' && currentUserRole !== 'DISTRICT_ADMIN') {
+                return res.status(403).json({ error: 'Unauthorized to invite Shops' });
+            }
+        } else {
+            return res.status(400).json({ error: 'Invalid role specified' });
         }
 
-        const hashedPassword = await bcrypt.hash('1234', 10);
+        // Determine District
+        let finalDistrict = district;
+        if (currentUserRole === 'DISTRICT_ADMIN') {
+            // District Admin can only invite for their district
+            if (!userDistrict) {
+                return res.status(500).json({ error: 'Admin district not found' });
+            }
+            finalDistrict = userDistrict;
+        }
+
+        // Check availability
+        const existing = await prisma.user.findUnique({ where: { mobile } });
+        if (existing) {
+            return res.status(400).json({ error: 'User already exists' });
+        }
+
+        // Create Invite (Placeholder password, Status INVITED)
+        const hashedPassword = await bcrypt.hash('1234', 10); // Standard placeholder
 
         const user = await prisma.user.create({
             data: {
                 mobile,
-                role: role || 'DISTRICT_ADMIN', // Default to DA if not specified? Or strictly required.
-                district: district, // Required for DA
-                status: 'ACTIVE',
+                role: role,
+                district: finalDistrict, // Important for Shop claim
+                status: 'INVITED',
                 password: hashedPassword,
                 otp: null
             }
         });
 
-        res.json({ message: 'User created successfully', user });
+        res.json({ message: 'User invited successfully. They can now Sign Up.', user });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to create user' });
+        console.error("Invite Error:", error);
+        res.status(500).json({ error: 'Failed to create invite' });
     }
 };
 
