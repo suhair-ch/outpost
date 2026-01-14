@@ -40,7 +40,11 @@ We use **Supabase** as our single source of truth.
 3.  **Environment Variables (Render)**:
     *   `DATABASE_URL`: (Your Supabase URL)
     *   `JWT_SECRET`: (Your secret)
+    *   `JWT_SECRET`: (Your secret)
     *   `NODE_ENV`: `production`
+
+    > **💡 Pro Tip (Blueprint)**:
+    > We have added a `render.yaml` file. On Render, you can select "New > Blueprint" and connect this repo. It will auto-read the config! You just need to provide the Environment Variables.
 
 4.  **Auto-Migration (Production)**:
     *   Render will automatically run the build.
