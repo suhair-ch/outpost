@@ -12,6 +12,7 @@ import Parcels from './pages/Parcels';
 import CreateRoute from './pages/CreateRoute';
 import RoutesPage from './pages/Routes';
 import Settlements from './pages/Settlements';
+import ShopSettlements from './pages/ShopSettlements';
 import Analytics from './pages/Analytics';
 import Sidebar from './components/Sidebar';
 
@@ -75,6 +76,7 @@ function App() {
           <Route path="/routes" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN]}><RoutesPage /></RoleRoute>} />
           <Route path="/routes/new" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN]}><CreateRoute /></RoleRoute>} />
           <Route path="/analytics" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN]}><Analytics /></RoleRoute>} />
+          <Route path="/shops/:shopId/settlements" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN]}><ShopSettlements /></RoleRoute>} />
 
           {/* DRIVER Routes */}
           <Route path="/driver-dashboard" element={<RoleRoute allowedRoles={[Role.DRIVER]}><DriverDashboard /></RoleRoute>} />

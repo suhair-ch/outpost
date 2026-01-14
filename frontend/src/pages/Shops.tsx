@@ -1,9 +1,11 @@
 
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, MapPin, Phone } from 'lucide-react';
 import client from '../api/client';
 
 const Shops = () => {
+    const navigate = useNavigate();
     const [shops, setShops] = useState<any[]>([]);
     const [showModal, setShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -102,6 +104,13 @@ const Shops = () => {
                             <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--glass-border)' }}>
                                 Commission: <span style={{ color: 'var(--success)' }}>₹{shop.commission}</span> per parcel
                             </div>
+                            <button
+                                className="btn"
+                                style={{ marginTop: '1rem', width: '100%', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.2)' }}
+                                onClick={() => navigate(`/shops/${shop.id}/settlements`)}
+                            >
+                                💰 Financials & Debt
+                            </button>
                         </div>
                     </div>
                 ))}

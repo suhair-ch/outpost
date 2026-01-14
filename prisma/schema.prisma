@@ -76,6 +76,9 @@ model Parcel {
   
   routeId             Int?
   route               Route?   @relation(fields: [routeId], references: [id])
+
+  settlementId        Int?
+  settlement          Settlement? @relation(fields: [settlementId], references: [id])
 }
 
 model Route {
@@ -103,12 +106,17 @@ model Settlement {
   shopId          Int
   shop            Shop     @relation(fields: [shopId], references: [id])
   
-  totalCommission Float
+  totalCommissionEarned Float // What the shop keeps
+  totalCashCollected    Float // What the shop TOOK from customers
+  netAmountToBePaid     Float // What shop must PAY ADMIN (Cash - Commission)
+
   periodStart     DateTime
   periodEnd       DateTime
   
-  status          String   @default("PENDING") // PENDING, PAID
+  status          String   @default("PAID") // PAID (Assuming instant collection)
   
+  parcels         Parcel[]
+
   createdAt       DateTime @default(now())
 }
 

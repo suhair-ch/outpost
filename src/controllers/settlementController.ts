@@ -5,90 +5,107 @@ import { AuthRequest } from '../types';
 
 const prisma = new PrismaClient();
 
-// Get Shop Earnings (Unpaid Commissions)
+// Get Current Debt (What the Shop owes the Admin)
 export const getShopEarnings = async (req: AuthRequest, res: Response) => {
     try {
         const { shopId } = req.params;
 
-        // Security Check: If role is SHOP, ensure they are requesting their own data
-        if (req.user?.role === 'SHOP' && req.user.shopId !== Number(shopId)) {
-            return res.status(403).json({ error: 'Access denied. You can only view your own earnings.' });
-        }
-
-        // Calculate total unpaid commission
-        // Assuming commission is stored on Shop model as a rate, but we need to calculate based on parcels?
-        // User requirements said "Settlement... total_commission".
-        // Let's assume we sum up commissions for parcels that are DELIVERED and not yet settled?
-        // Or just list pending settlements.
-
-        // For MVP simplicity: Just return the commission rate and maybe a count of delivered parcels?
-        // Actually, user asked for: GET /shops/{shop_id}/earnings
-
-        // Let's implement a simple logic: 
-        // Find all parcels from this shop that are DELIVERED.
-        // Calculate total based on Shop's commission rate?
-        // This is getting complex. Let's stick to what we have in Schema.
-
-        // Schema has Settlement model. So maybe this just returns the Settlement history?
-        // "Settlement APIs: GET /shops/{shop_id}/earnings"
-
-        // Let's assume this returns a summary of pending payouts.
         const shop = await prisma.shop.findUnique({ where: { id: Number(shopId) } });
         if (!shop) return res.status(404).json({ error: 'Shop not found' });
 
-        // Calculate Total Earnings (All time)
-        // Commission is per parcel sent.
-        const totalParcels = await prisma.parcel.count({
-            where: { sourceShopId: Number(shopId) }
+        // details of parcels that are NOT yet settled
+        const unsettledParcels = await prisma.parcel.findMany({
+            where: {
+                sourceShopId: Number(shopId),
+                settlementId: null
+            }
         });
 
-        const totalEarnings = totalParcels * shop.commission;
+        // 1. Total Cash the shop accepted from customers
+        const totalCashCollected = unsettledParcels.reduce((sum, p) => sum + p.price, 0);
 
-        // Calculate Paid Amount
+        // 2. Total Commission the shop earned
+        const totalCommissionEarned = unsettledParcels.length * shop.commission;
+
+        // 3. Net Amout: Shop owes this to Admin
+        // (Cash they hold) - (Commission they keep)
+        const netAmountToBePaid = totalCashCollected - totalCommissionEarned;
+
+        // Fetch history
         const settlements = await prisma.settlement.findMany({
-            where: { shopId: Number(shopId) }
+            where: { shopId: Number(shopId) },
+            orderBy: { createdAt: 'desc' }
         });
-
-        const totalSettled = settlements.reduce((sum, s) => sum + s.totalCommission, 0);
-        const pendingAmount = totalEarnings - totalSettled;
 
         res.json({
             shop,
-            stats: {
-                totalParcels,
-                commissionRate: shop.commission,
-                totalEarnings,
-                totalSettled,
-                pendingAmount
+            unsettledStats: {
+                parcelCount: unsettledParcels.length,
+                totalCashCollected,
+                totalCommissionEarned,
+                netAmountToBePaid
             },
             settlements
         });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch earnings' });
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch shop debt' });
     }
 };
 
-// Mark Paid (Create Settlement)
+// Settle Debt (Collect Cash & Close Books)
 export const markPaid = async (req: AuthRequest, res: Response) => {
     try {
-        const { shopId, amount, periodStart, periodEnd } = req.body;
+        const { shopId } = req.body; // We don't need amount, we calculate it live
 
         const shop = await prisma.shop.findUnique({ where: { id: Number(shopId) } });
         if (!shop) return res.status(404).json({ error: 'Shop not found' });
 
+        // 1. Find Unsettled Parcels
+        const unsettledParcels = await prisma.parcel.findMany({
+            where: {
+                sourceShopId: Number(shopId),
+                settlementId: null
+            }
+        });
+
+        if (unsettledParcels.length === 0) {
+            return res.status(400).json({ error: 'No unpaid parcels to settle.' });
+        }
+
+        // 2. Calculate Token
+        const totalCashCollected = unsettledParcels.reduce((sum, p) => sum + p.price, 0);
+        const totalCommissionEarned = unsettledParcels.length * shop.commission;
+        const netAmountToBePaid = totalCashCollected - totalCommissionEarned;
+
+        // 3. Create Settlement Record
         const settlement = await prisma.settlement.create({
             data: {
                 shopId: Number(shopId),
-                totalCommission: Number(amount),
-                periodStart: new Date(periodStart),
-                periodEnd: new Date(periodEnd),
-                status: 'PAID',
-                transactionId: `TXN-${Date.now()}`,
-                district: (shop as any).district // Cast shop
-            } as any // Cast data
+                district: shop.district,
+                totalCashCollected,
+                totalCommissionEarned,
+                netAmountToBePaid,
+                periodStart: unsettledParcels[0].createdAt, // Oldest parcel
+                periodEnd: new Date(),
+                status: 'PAID'
+            }
         });
-        res.json(settlement);
+
+        // 4. Update Parcels to link to this Settlement
+        await prisma.parcel.updateMany({
+            where: {
+                sourceShopId: Number(shopId),
+                settlementId: null
+            },
+            data: {
+                settlementId: settlement.id
+            }
+        });
+
+        res.json({ success: true, settlement });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to mark as paid' });
+        console.error(error);
+        res.status(500).json({ error: 'Failed to create settlement' });
     }
 };
