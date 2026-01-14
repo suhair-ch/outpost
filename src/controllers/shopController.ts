@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 export const createShop = async (req: AuthRequest, res: Response) => {
     try {
-        let { shopName, ownerName, mobileNumber, district, commission } = req.body;
+        let { shopName, ownerName, mobileNumber, district, commission, isHub } = req.body;
 
         // Security: If creator is District Admin, force the district
         if (req.user?.role === 'DISTRICT_ADMIN') {
@@ -17,8 +17,9 @@ export const createShop = async (req: AuthRequest, res: Response) => {
         // Generate Shop Code
         // e.g. KOZ-SHP-1234
         const distCode = (district || 'KER').substring(0, 3).toUpperCase();
+        const typeCode = isHub ? 'HUB' : 'SHP';
         const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-        const shopCode = `${distCode}-SHP-${randomSuffix}`;
+        const shopCode = `${distCode}-${typeCode}-${randomSuffix}`;
 
         // Hash Temp Password
         const hashedPassword = await bcrypt.hash('1234', 10);
@@ -32,7 +33,8 @@ export const createShop = async (req: AuthRequest, res: Response) => {
                     ownerName,
                     mobileNumber,
                     district,
-                    commission: commission || 0.0
+                    commission: commission || 0.0,
+                    isHub: isHub || false
                 }
             });
 

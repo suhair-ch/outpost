@@ -16,7 +16,8 @@ const Shops = () => {
         ownerName: '',
         mobileNumber: '',
         district: '',
-        commission: 0
+        commission: 0,
+        isHub: false
     });
 
     const fetchShops = async () => {
@@ -37,7 +38,7 @@ const Shops = () => {
         try {
             await client.post('/shops', formData);
             setShowModal(false);
-            setFormData({ shopName: '', ownerName: '', mobileNumber: '', district: '', commission: 0 });
+            setFormData({ shopName: '', ownerName: '', mobileNumber: '', district: '', commission: 0, isHub: false });
             fetchShops(); // Refresh list
         } catch (error: any) {
             alert(error.response?.data?.details || 'Failed to create shop');
@@ -75,9 +76,12 @@ const Shops = () => {
             {/* Shop Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                 {filteredShops.map((shop) => (
-                    <div key={shop.id} className="glass-panel card">
+                    <div key={shop.id} className="glass-panel card" style={shop.isHub ? { border: '2px solid #3b82f6' } : {}}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                            <h3 style={{ margin: 0, color: 'white' }}>{shop.shopName}</h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <h3 style={{ margin: 0, color: 'white' }}>{shop.shopName}</h3>
+                                {shop.isHub && <span title="Mini Hub" style={{ fontSize: '1.2rem' }}>🏢</span>}
+                            </div>
                             <span style={{
                                 padding: '0.25rem 0.5rem', borderRadius: '4px',
                                 background: shop.status === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
@@ -134,7 +138,13 @@ const Shops = () => {
                                 <input required placeholder="Mobile Number" className="input-field" value={formData.mobileNumber} onChange={e => setFormData({ ...formData, mobileNumber: e.target.value })} />
                                 <input required placeholder="District" className="input-field" value={formData.district} onChange={e => setFormData({ ...formData, district: e.target.value })} />
                             </div>
-                            <input type="number" placeholder="Commission (₹)" className="input-field" value={formData.commission} onChange={e => setFormData({ ...formData, commission: Number(e.target.value) })} />
+                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                <input type="number" placeholder="Commission (₹)" className="input-field" style={{ flex: 1 }} value={formData.commission} onChange={e => setFormData({ ...formData, commission: Number(e.target.value) })} />
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'white', cursor: 'pointer' }}>
+                                    <input type="checkbox" checked={formData.isHub} onChange={e => setFormData({ ...formData, isHub: e.target.checked })} style={{ width: '20px', height: '20px' }} />
+                                    Is Mini Hub?
+                                </label>
+                            </div>
 
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                                 <button type="button" className="btn" style={{ background: 'var(--bg-card)', color: 'white', flex: 1 }} onClick={() => setShowModal(false)}>Cancel</button>

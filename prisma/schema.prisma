@@ -31,6 +31,7 @@ model Shop {
   district        String
   area            String?  // Exact Post Office/Area
   commission      Float    @default(0.0) // Commission per parcel
+  isHub           Boolean  @default(false) // Is this a Mini Hub?
   status          String   @default("ACTIVE") // ACTIVE, INACTIVE
   createdAt       DateTime @default(now())
   
