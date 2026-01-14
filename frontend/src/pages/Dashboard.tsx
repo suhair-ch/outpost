@@ -202,13 +202,29 @@ const InviteManager = () => {
                     <div style={{ gridColumn: '1 / -1' }}>
                         <label style={{ display: 'block', marginBottom: '0.6rem', fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assigned District</label>
                         <div className="input-group" style={{ marginBottom: 0, background: 'rgba(15, 23, 42, 0.4)' }}>
-                            <input
-                                type="text"
-                                className="input-field"
-                                value={district} onChange={e => setDistrict(e.target.value)}
-                                placeholder="e.g. Thiruvananthapuram"
-                                style={{ padding: '0.85rem 1rem', fontSize: '1rem' }}
-                            />
+                            <select
+                                value={district}
+                                onChange={e => setDistrict(e.target.value)}
+                                style={{
+                                    background: 'transparent',
+                                    color: 'white',
+                                    padding: '0.85rem 1rem',
+                                    fontSize: '1rem',
+                                    fontWeight: 500,
+                                    cursor: 'pointer',
+                                    width: '100%',
+                                    border: 'none',
+                                    outline: 'none'
+                                }}
+                            >
+                                <option value="" style={{ background: '#1e293b' }}>Select District</option>
+                                {[
+                                    "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam", "Idukki", "Ernakulam",
+                                    "Thrissur", "Palakkad", "Malappuram", "Kozhikode", "Wayanad", "Kannur", "Kasargod"
+                                ].map(d => (
+                                    <option key={d} value={d} style={{ background: '#1e293b' }}>{d}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                 )}

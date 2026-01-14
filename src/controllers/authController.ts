@@ -9,6 +9,8 @@ import { sendSms } from '../services/smsService';
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
+import { KERALA_DISTRICTS } from '../constants';
+
 // Create User (District Admin or other roles)
 export const inviteUser = async (req: AuthRequest, res: Response) => {
     try {
@@ -30,6 +32,24 @@ export const inviteUser = async (req: AuthRequest, res: Response) => {
             if (!district) {
                 return res.status(400).json({ error: 'District is required when inviting a District Admin.' });
             }
+
+            // 1. Validate against strictly allowed list
+            if (!KERALA_DISTRICTS.includes(district)) {
+                return res.status(400).json({ error: `Invalid District. Must be one of: ${KERALA_DISTRICTS.join(', ')}` });
+            }
+
+            // 2. Ensure ONE Admin per District
+            const existingAdmin = await prisma.user.findFirst({
+                where: {
+                    role: 'DISTRICT_ADMIN',
+                    district: district
+                }
+            });
+
+            if (existingAdmin) {
+                return res.status(400).json({ error: `An Admin for ${district} already exists (${existingAdmin.mobile}). Only 1 per district allowed.` });
+            }
+
             // finalDistrict remains as passed in body
         }
 
