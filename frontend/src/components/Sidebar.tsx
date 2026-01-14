@@ -32,6 +32,7 @@ const Sidebar = () => {
         { path: '/driver-dashboard', label: 'My Tasks', icon: LayoutDashboard, roles: [Role.DRIVER] },
 
         { path: '/analytics', label: 'Analytics', icon: BarChart3, roles: [Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN] },
+        { path: '/areas', label: 'Areas', icon: Map, roles: [Role.SUPER_ADMIN, Role.DISTRICT_ADMIN] },
         { path: '/shops', label: 'Shops', icon: Store, roles: [Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN] },
         { path: '/drivers', label: 'Drivers', icon: Users, roles: [Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN] },
         { path: '/routes', label: 'Routes', icon: Map, roles: [Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN] },

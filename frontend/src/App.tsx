@@ -14,6 +14,7 @@ import RoutesPage from './pages/Routes';
 import Settlements from './pages/Settlements';
 import ShopSettlements from './pages/ShopSettlements';
 import Analytics from './pages/Analytics';
+import Areas from './pages/Areas';
 import Sidebar from './components/Sidebar';
 
 // Protected Route Wrapper
@@ -76,6 +77,8 @@ function App() {
           <Route path="/routes" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN]}><RoutesPage /></RoleRoute>} />
           <Route path="/routes/new" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN]}><CreateRoute /></RoleRoute>} />
           <Route path="/analytics" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN]}><Analytics /></RoleRoute>} />
+          {/* Area Management */}
+          <Route path="/areas" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN]}><Areas /></RoleRoute>} />
           <Route path="/shops/:shopId/settlements" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN]}><ShopSettlements /></RoleRoute>} />
 
           {/* DRIVER Routes */}

@@ -64,6 +64,7 @@ router.get('/dashboard/districts', authenticate, requireRole([Role.ADMIN, Role.D
 // Locations (Public or Auth?) - Let's make it public for Signup, or Auth for internal? Signup needs it public.
 router.get('/locations/districts', areaController.getDistricts);
 router.get('/locations/areas', areaController.getAreas);
+router.post('/locations/areas', authenticate, requireRole([Role.SUPER_ADMIN, Role.DISTRICT_ADMIN]), areaController.createArea);
 
 
 export default router;

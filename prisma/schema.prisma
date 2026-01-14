@@ -124,6 +124,7 @@ model Settlement {
 model Area {
   id              Int      @id @default(autoincrement())
   name            String
+  code            String?   // Short code e.g. TRR, KDR
   normalizedName  String
   district        String
   pincode         String?   // nullable

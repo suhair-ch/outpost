@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { AuthRequest } from '../types';
 
 const prisma = new PrismaClient();
 
@@ -20,26 +21,85 @@ export const getDistricts = async (req: Request, res: Response) => {
     }
 };
 
-// Get Areas by District
+// Get Areas (Optionally filtered by District)
 export const getAreas = async (req: Request, res: Response) => {
     try {
         const { district } = req.query;
 
-        if (!district || typeof district !== 'string') {
-            return res.status(400).json({ error: 'District parameter is required' });
+        const where: any = { isActive: true };
+
+        if (district && typeof district === 'string') {
+            where.district = district;
         }
 
         const areas = await prisma.area.findMany({
-            where: {
-                district,
-                isActive: true // Only Active Areas
-            },
-            orderBy: { name: 'asc' } // Alphabetical Sort
+            where,
+            orderBy: [{ district: 'asc' }, { name: 'asc' }]
         });
 
         res.json(areas);
     } catch (error) {
         console.error("Get Areas Error:", error);
         res.status(500).json({ error: 'Failed to fetch areas' });
+    }
+};
+// Create New Area
+export const createArea = async (req: AuthRequest, res: Response) => {
+    try {
+        const { name, code, pincode, district } = req.body;
+        const user = req.user;
+
+        // 1. Authorization & District Scope
+        let targetDistrict = district;
+
+        if (user?.role === 'DISTRICT_ADMIN') {
+            if (!user.district) return res.status(403).json({ error: 'Your account has no district assigned.' });
+            targetDistrict = user.district; // Force own district
+        } else if (user?.role === 'SUPER_ADMIN') {
+            if (!district) return res.status(400).json({ error: 'District is required for Super Admin.' });
+        } else {
+            return res.status(403).json({ error: 'Access denied.' });
+        }
+
+        // 2. Validation
+        if (!name || !code) {
+            return res.status(400).json({ error: 'Name and Code are required.' });
+        }
+
+        const normalizedName = name.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+        const upperCode = code.toUpperCase().trim();
+
+        // 3. Duplication Check (Name or Code in same District)
+        const existing = await prisma.area.findFirst({
+            where: {
+                district: targetDistrict,
+                OR: [
+                    { normalizedName: normalizedName },
+                    { code: upperCode }
+                ]
+            }
+        });
+
+        if (existing) {
+            return res.status(400).json({ error: `Area with this Name or Code (${upperCode}) already exists in ${targetDistrict}.` });
+        }
+
+        // 4. Create
+        const area = await prisma.area.create({
+            data: {
+                name,
+                normalizedName,
+                code: upperCode,
+                pincode,
+                district: targetDistrict,
+                isActive: true
+            }
+        });
+
+        res.json(area);
+
+    } catch (error) {
+        console.error("Create Area Error:", error);
+        res.status(500).json({ error: 'Failed to create area' });
     }
 };
