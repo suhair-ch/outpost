@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Package } from 'lucide-react';
+import { Package, Printer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import LocationSelector from '../components/LocationSelector';
@@ -117,6 +117,15 @@ const BookParcel = () => {
                             <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="20" height="20" alt="WhatsApp" />
                             Share on WhatsApp
                         </a>
+
+                        <button
+                            className="btn"
+                            onClick={() => window.open(`/print-label/${lastBookedParcel.id}`, '_blank')}
+                            style={{ width: '100%', background: 'var(--primary)', color: 'white', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                        >
+                            <Printer size={20} />
+                            Print Shipping Label
+                        </button>
 
                         <div style={{ display: 'flex', gap: '1rem' }}>
                             <button className="btn" onClick={() => setShowSuccessModal(false)} style={{ flex: 1, background: 'var(--bg-dark)' }}>Book Another</button>

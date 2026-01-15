@@ -1,10 +1,11 @@
 
 import { useEffect, useState } from 'react';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, Printer } from 'lucide-react';
 import client from '../api/client';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 const Parcels = () => {
+    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [parcels, setParcels] = useState<any[]>([]);
     const [search, setSearch] = useState(''); // Search State
@@ -116,6 +117,13 @@ const Parcels = () => {
                                             }}
                                         >
                                             Update Status
+                                        </button>
+                                        <button
+                                            style={{ marginLeft: '0.5rem', fontSize: '0.7rem', padding: '2px 6px', cursor: 'pointer', background: 'var(--bg-glass)', color: 'var(--text-light)', border: '1px solid var(--glass-border)', borderRadius: '4px' }}
+                                            onClick={() => navigate(`/print-label/${parcel.id}`)}
+                                        >
+                                            <Printer size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                                            Print Label
                                         </button>
                                     </div>
                                 </td>

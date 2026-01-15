@@ -93,8 +93,14 @@ function App() {
           <Route path="/book-parcel" element={<RoleRoute allowedRoles={[Role.SHOP]}><BookParcel /></RoleRoute>} />
           <Route path="/deliver-parcel" element={<RoleRoute allowedRoles={[Role.SHOP]}><DeliverParcel /></RoleRoute>} />
 
+          import PrintLabel from './pages/PrintLabel'; // NEW
+
+          // ... imports
+
+          // Inside App component Routes
           {/* SHARED Routes */}
           <Route path="/parcels" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN, Role.SHOP]}><Parcels /></RoleRoute>} />
+          <Route path="/print-label/:id" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN, Role.SHOP]}><PrintLabel /></RoleRoute>} />
           <Route path="/settlements" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN, Role.SHOP]}><Settlements /></RoleRoute>} />
         </Route>
       </Routes>
