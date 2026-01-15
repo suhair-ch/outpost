@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { AuthRequest } from '../types';
 
 const prisma = new PrismaClient();
@@ -9,6 +10,8 @@ import { Role } from '../types';
 export const createDriver = async (req: AuthRequest, res: Response) => {
     try {
         const { name, mobile, district } = req.body;
+        const hashedPassword = await bcrypt.hash('1234', 10);
+
         // Create Driver and User in transaction
         const result = await prisma.$transaction(async (tx) => {
             const driver = await tx.driver.create({
@@ -22,13 +25,17 @@ export const createDriver = async (req: AuthRequest, res: Response) => {
             // Check if user exists, if not create
             const user = await tx.user.upsert({
                 where: { mobile: mobile },
-                update: {},
+                update: {
+                    password: hashedPassword, // Ensure they can login even if previously created without one
+                    role: 'DRIVER'
+                },
                 create: {
                     mobile: mobile,
                     role: 'DRIVER',
                     district: district || 'Unknown',
                     status: 'ACTIVE',
-                    otp: '1234'
+                    otp: '1234',
+                    password: hashedPassword
                 }
             });
 

@@ -6,6 +6,8 @@ import Tracking from './pages/Tracking';
 import Dashboard from './pages/Dashboard';
 import DriverDashboard from './pages/DriverDashboard';
 import ShopDashboard from './pages/ShopDashboard'; // NEW
+import BookParcel from './pages/BookParcel'; // NEW 2
+import DeliverParcel from './pages/DeliverParcel'; // NEW 2
 import Shops from './pages/Shops';
 import Drivers from './pages/Drivers';
 import Parcels from './pages/Parcels';
@@ -86,6 +88,8 @@ function App() {
 
           {/* SHOP Routes */}
           <Route path="/shop-dashboard" element={<RoleRoute allowedRoles={[Role.SHOP]}><ShopDashboard /></RoleRoute>} />
+          <Route path="/book-parcel" element={<RoleRoute allowedRoles={[Role.SHOP]}><BookParcel /></RoleRoute>} />
+          <Route path="/deliver-parcel" element={<RoleRoute allowedRoles={[Role.SHOP]}><DeliverParcel /></RoleRoute>} />
 
           {/* SHARED Routes */}
           <Route path="/parcels" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN, Role.SHOP]}><Parcels /></RoleRoute>} />
