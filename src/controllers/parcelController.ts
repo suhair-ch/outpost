@@ -33,23 +33,62 @@ export const bookParcel = async (req: AuthRequest, res: Response) => {
         });
         if (!shop) return res.status(404).json({ error: 'Shop not found' });
 
-        const otp = Math.floor(1000 + Math.random() * 9000).toString(); // Generate 4-digit OTP
+        // Generate Smart Tracking Number: DIST-AREA-####
+        // e.g. MAL-PMN-1234
+        const distCode = (destinationDistrict || 'KER').substring(0, 3).toUpperCase();
+        let areaCode = 'HUB'; // Default
+
+        if (destinationArea) {
+            const areaRecord = await prisma.area.findFirst({
+                where: {
+                    name: destinationArea,
+                    district: destinationDistrict // Ensure correct district context
+                }
+            });
+            if (areaRecord?.code) {
+                areaCode = areaRecord.code;
+            } else {
+                areaCode = destinationArea.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X');
+            }
+        }
+
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000); // Temporary placeholder
+        const tempTrackingNumber = `TEMP-${Date.now()}-${randomSuffix}`;
+
+        // Generate OTP
+        const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
         const parcel = await prisma.parcel.create({
             data: {
-                senderName, senderMobile, receiverName, receiverMobile,
-                destinationDistrict, destinationArea, parcelSize, paymentMode, price,
-                sourceShopId: Number(finalShopId),
+                trackingNumber: tempTrackingNumber,
+                senderName,
+                senderMobile,
+                receiverName,
+                receiverMobile,
+                sourceShopId: Number(finalShopId), // Use finalShopId as determined earlier
                 district: shop.district, // STRICT STAMPING
-                status: 'BOOKED',
-                deliveryOtp: otp // Store OTP immediately
+                destinationDistrict,
+                destinationArea,
+                parcelSize,
+                paymentMode,
+                price,
+                deliveryOtp,
+                status: 'BOOKED'
             }
         });
 
-        // Send SMS to both Sender and Receiver
-        await notifyParcelParticipants(parcel, `Parcel #${parcel.id} Booked! OTP: ${otp}. Track: http://localhost:5173/tracking`);
+        // UPDATE with Sequential ID (DIST-AREA-0001)
+        const paddedId = String(parcel.id).padStart(4, '0');
+        const finalTrackingNumber = `${distCode}-${areaCode}-${paddedId}`;
 
-        res.json(parcel);
+        const finalParcel = await prisma.parcel.update({
+            where: { id: parcel.id },
+            data: { trackingNumber: finalTrackingNumber }
+        });
+
+        await notifyParcelParticipants(finalParcel, `Parcel #${finalParcel.trackingNumber} Booked! OTP: ${deliveryOtp}. Track: http://localhost:5173/tracking`);
+
+        res.json(finalParcel);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to book parcel', details: (error as any).message });

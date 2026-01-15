@@ -52,6 +52,7 @@ model Driver {
 
 model Parcel {
   id                  Int      @id @default(autoincrement())
+  trackingNumber      String   @unique @default(cuid()) // Public ID: DIST-AREA-####
   senderName          String
   senderMobile        String
   receiverName        String

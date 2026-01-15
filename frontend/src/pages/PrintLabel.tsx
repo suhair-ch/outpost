@@ -88,7 +88,7 @@ const PrintLabel = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '2px solid black', borderBottom: '2px solid black', padding: '1.5rem 0' }}>
                     <div>
                         <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Tracking ID</div>
-                        <div style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'monospace' }}>#{parcel.id}</div>
+                        <div style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'monospace' }}>{parcel.trackingNumber || `#${parcel.id}`}</div>
                     </div>
                     <img src={qrUrl} alt="QR" style={{ width: '100px', height: '100px' }} />
                 </div>

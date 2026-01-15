@@ -99,7 +99,7 @@ const BookParcel = () => {
                             <Package size={32} color="white" />
                         </div>
                         <h2>Booking Confirmed!</h2>
-                        <p style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Parcel ID: <strong>#{lastBookedParcel.id}</strong></p>
+                        <p style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Tracking ID: <strong>{lastBookedParcel.trackingNumber}</strong></p>
                         <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
                             <p style={{ margin: 0, color: 'var(--text-dim)' }}>Share this OTP with the Receiver</p>
                             <h1 style={{ margin: '0.5rem 0 0', letterSpacing: '4px', color: 'var(--primary)' }}>

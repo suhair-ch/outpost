@@ -77,7 +77,7 @@ const Parcels = () => {
                     <tbody>
                         {parcels.map((parcel) => (
                             <tr key={parcel.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                                <td style={{ padding: '1rem', fontWeight: 'bold' }}>#{parcel.id}</td>
+                                <td style={{ padding: '1rem', fontWeight: 'bold' }}>{parcel.trackingNumber || `#${parcel.id}`}</td>
                                 <td style={{ padding: '1rem' }}>
                                     <div>{parcel.senderName}</div>
                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>{parcel.senderMobile}</div>
