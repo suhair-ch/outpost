@@ -27,6 +27,19 @@ const Tracking = () => {
         }
     };
 
+    // Calculate Progress Percentage
+    const getProgress = (status: string) => {
+        switch (status) {
+            case 'BOOKED': return 10;
+            case 'COLLECTED_FROM_SHOP': return 30;
+            case 'AT_CENTRAL_HUB': return 50;
+            case 'DISPATCHED': return 75;
+            case 'ARRIVED_AT_DESTINATION': return 90;
+            case 'DELIVERED': return 100;
+            default: return 5;
+        }
+    };
+
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg-dark)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem' }}>
 
@@ -36,7 +49,7 @@ const Tracking = () => {
                     <Package size={24} color="white" />
                 </div>
                 <h1>Track Your Parcel</h1>
-                <p style={{ color: 'var(--text-dim)' }}>Enter your Parcel ID to see the current status</p>
+                <p style={{ color: 'var(--text-dim)' }}>Real-time Delivery Updates</p>
             </div>
 
             {/* Search Box */}
@@ -60,72 +73,90 @@ const Tracking = () => {
                 </div>
             )}
 
-            {/* Result Card */}
+            {/* Live Tracking Map */}
             {parcel && (
-                <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '2rem' }}>
+                <div className="glass-panel" style={{ width: '100%', maxWidth: '700px', padding: '2rem', position: 'relative', overflow: 'hidden' }}>
 
-                    <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                        <h2 style={{ margin: 0, fontSize: '2.5rem', color: 'var(--primary)' }}>#{parcel.id}</h2>
-                        <p style={{ color: 'var(--text-dim)', margin: '0.5rem 0' }}>Current Status</p>
+                    {/* Status Header */}
+                    <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                        <h2 style={{ margin: 0, fontSize: '2rem', color: 'white' }}>#{parcel.id}</h2>
                         <div style={{
-                            display: 'inline-block', padding: '0.5rem 1.5rem', borderRadius: '20px',
-                            background: parcel.status === 'DELIVERED' ? '#10b981' : '#f59e0b',
-                            color: 'white', fontWeight: 'bold'
+                            display: 'inline-block', marginTop: '0.5rem', padding: '0.5rem 1.5rem', borderRadius: '20px',
+                            background: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc', border: '1px solid rgba(99, 102, 241, 0.4)',
+                            fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px'
                         }}>
                             {parcel.status.replace(/_/g, ' ')}
                         </div>
-
-                        {/* Resend OTP Action (Mock - would need Auth context to show strictly) */}
-                        {/* Since this is public tracking, we shouldn't expose Resend OTP here casually. */}
-                        {/* But the user requirement says "DISTRICT ADMIN... Handle OTP failures". */}
-                        {/* This should be in the Admin/Shop Parcel View, not public tracking. */}
-                        {/* I will add it to Parcels.tsx/Parcels Table, NOT here. */}
                     </div>
 
-                    {/* Visual Timeline */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3rem', position: 'relative' }}>
-                        {/* Line */}
-                        <div style={{ position: 'absolute', top: '20px', left: '0', right: '0', height: '4px', background: 'rgba(255,255,255,0.1)', zIndex: 0 }}></div>
+                    {/* LIVE MAP VISUALIZATION */}
+                    <div style={{ position: 'relative', padding: '2rem 1rem', marginBottom: '3rem' }}>
 
-                        {/* Steps */}
-                        {[
-                            { label: 'Booked', status: ['BOOKED', 'COLLECTED_FROM_SHOP', 'DISPATCHED', 'DELIVERED'] },
-                            { label: 'Picked Up', status: ['COLLECTED_FROM_SHOP', 'DISPATCHED', 'DELIVERED'] },
-                            { label: 'In Transit', status: ['DISPATCHED', 'DELIVERED'] },
-                            { label: 'Delivered', status: ['DELIVERED'] }
-                        ].map((step, idx) => {
-                            const active = step.status.includes(parcel.status);
-                            return (
-                                <div key={idx} style={{ position: 'relative', zIndex: 1, textAlign: 'center', flex: 1 }}>
-                                    <div style={{
-                                        width: '40px', height: '40px', borderRadius: '50%', margin: '0 auto 1rem',
-                                        background: active ? 'var(--primary)' : '#333',
-                                        border: active ? '4px solid rgba(139, 92, 246, 0.3)' : '4px solid var(--bg-dark)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        transition: 'all 0.3s ease'
-                                    }}>
-                                        {active ? <CheckCircle size={20} color="white" /> : <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#555' }} />}
-                                    </div>
-                                    <span style={{ color: active ? 'white' : 'var(--text-dim)', fontSize: '0.9rem', fontWeight: active ? 'bold' : 'normal' }}>{step.label}</span>
+                        {/* The Road */}
+                        <div style={{ position: 'relative', height: '8px', background: '#334155', borderRadius: '4px', width: '100%' }}>
+                            {/* Progress Bar (Animated) */}
+                            <div style={{
+                                position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: '4px',
+                                background: 'linear-gradient(to right, var(--primary), #a855f7)',
+                                width: `${getProgress(parcel.status)}%`,
+                                transition: 'width 1.5s ease-in-out',
+                                boxShadow: '0 0 15px var(--primary)'
+                            }}></div>
+
+                            {/* The Truck (Moves with Progress) */}
+                            <div style={{
+                                position: 'absolute', top: '50%',
+                                left: `${getProgress(parcel.status)}%`,
+                                transform: 'translate(-50%, -50%)',
+                                transition: 'left 1.5s ease-in-out',
+                                zIndex: 10
+                            }}>
+                                {/* Pulsing Effect */}
+                                <div style={{
+                                    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                                    width: '60px', height: '60px', background: 'var(--primary)',
+                                    borderRadius: '50%', opacity: 0.2, animation: 'pulse 2s infinite'
+                                }}></div>
+                                <div style={{
+                                    width: '40px', height: '40px', background: 'var(--bg-elevated)',
+                                    borderRadius: '50%', border: '2px solid white',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
+                                }}>
+                                    {parcel.status === 'DELIVERED' ? <CheckCircle size={20} color="#10b981" /> :
+                                        <div style={{ fontSize: '1.2rem' }}>🚚</div>}
                                 </div>
-                            )
-                        })}
+                            </div>
+
+                            {/* Valid Points */}
+                            <div style={{ position: 'absolute', left: '0%', top: '16px', fontSize: '0.8rem', color: 'var(--text-dim)' }}>Sender</div>
+                            <div style={{ position: 'absolute', left: '50%', top: '16px', transform: 'translateX(-50%)', fontSize: '0.8rem', color: 'var(--text-dim)' }}>Hub</div>
+                            <div style={{ position: 'absolute', right: '0%', top: '16px', fontSize: '0.8rem', color: 'var(--text-dim)' }}>Receiver</div>
+                        </div>
+
                     </div>
 
-                    <div style={{ display: 'grid', gap: '1rem', background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: 'var(--text-dim)' }}>From</span>
-                            <span style={{ fontWeight: 500 }}>{parcel.senderName}</span>
+                    {/* Details Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', borderTop: '1px solid var(--glass-border)', paddingTop: '2rem' }}>
+                        <div>
+                            <div style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginBottom: '0.25rem' }}>From</div>
+                            <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{parcel.senderName}</div>
+                            <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>{new Date(parcel.createdAt).toLocaleDateString()}</div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: 'var(--text-dim)' }}>To</span>
-                            <span style={{ fontWeight: 500 }}>{parcel.receiverName} ({parcel.destinationDistrict})</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', marginTop: '0.5rem' }}>
-                            <span style={{ color: 'var(--text-dim)' }}>Last Update</span>
-                            <span>{new Date(parcel.updatedAt).toLocaleString()}</span>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginBottom: '0.25rem' }}>To</div>
+                            <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{parcel.receiverName}</div>
+                            <div style={{ color: 'var(--primary)', fontSize: '0.9rem' }}>{parcel.destinationDistrict}</div>
                         </div>
                     </div>
+
+                    {/* CSS for Pulse */}
+                    <style>{`
+                        @keyframes pulse {
+                            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.5; }
+                            100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+                        }
+                    `}</style>
                 </div>
             )}
         </div>

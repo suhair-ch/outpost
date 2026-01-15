@@ -7,19 +7,36 @@ const prisma = new PrismaClient();
 
 export const createShop = async (req: AuthRequest, res: Response) => {
     try {
-        let { shopName, ownerName, mobileNumber, district, commission, isHub } = req.body;
+        let { shopName, ownerName, mobileNumber, district, commission, isHub, area } = req.body;
 
         // Security: If creator is District Admin, force the district
         if (req.user?.role === 'DISTRICT_ADMIN') {
             district = req.user.district; // Force their district
         }
 
-        // Generate Shop Code
-        // e.g. KOZ-SHP-1234
+        // Generate Shop Code with Area Code
+        // e.g. MAL-PMN-1234 (District - Area - Random)
         const distCode = (district || 'KER').substring(0, 3).toUpperCase();
-        const typeCode = isHub ? 'HUB' : 'SHP';
+        let areaCode = isHub ? 'HUB' : 'SHP';
+
+        if (area && district) {
+            // Try to find the official Area Code
+            const areaRecord = await prisma.area.findFirst({
+                where: {
+                    name: area,
+                    district: district
+                }
+            });
+            if (areaRecord?.code) {
+                areaCode = areaRecord.code;
+            } else {
+                // Fallback: Generate generic code from name
+                areaCode = area.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X');
+            }
+        }
+
         const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-        const shopCode = `${distCode}-${typeCode}-${randomSuffix}`;
+        const shopCode = `${distCode}-${areaCode}-${randomSuffix}`;
 
         // Hash Temp Password
         const hashedPassword = await bcrypt.hash('1234', 10);
@@ -33,6 +50,7 @@ export const createShop = async (req: AuthRequest, res: Response) => {
                     ownerName,
                     mobileNumber,
                     district,
+                    area, // Save the area name
                     commission: commission || 0.0,
                     isHub: isHub || false
                 }
