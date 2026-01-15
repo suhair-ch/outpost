@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, Map, Store, Users, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, Map, Store, Users, BarChart3, TrendingUp } from 'lucide-react';
 import { Role } from '../types';
 
 const Sidebar = () => {
@@ -38,6 +38,7 @@ const Sidebar = () => {
         { path: '/routes', label: 'Routes', icon: Map, roles: [Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN] },
         { path: '/parcels', label: 'Parcels', icon: Package, roles: [Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN, Role.SHOP] },
         { path: '/settlements', label: 'Settlements', icon: BarChart3, roles: [Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN, Role.SHOP] },
+        { path: '/franchise-reports', label: 'Franchise Reports', icon: TrendingUp, roles: [Role.SUPER_ADMIN] },
     ];
 
     const menuItems = allMenuItems.filter(item => item.roles.includes(role as Role));

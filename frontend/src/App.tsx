@@ -15,6 +15,7 @@ import CreateRoute from './pages/CreateRoute';
 import RoutesPage from './pages/Routes';
 import Settlements from './pages/Settlements';
 import ShopSettlements from './pages/ShopSettlements';
+import FranchiseReports from './pages/FranchiseReports'; // NEW
 import Analytics from './pages/Analytics';
 import Areas from './pages/Areas';
 import Sidebar from './components/Sidebar';
@@ -79,6 +80,7 @@ function App() {
           <Route path="/routes" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN]}><RoutesPage /></RoleRoute>} />
           <Route path="/routes/new" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN]}><CreateRoute /></RoleRoute>} />
           <Route path="/analytics" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN]}><Analytics /></RoleRoute>} />
+          <Route path="/franchise-reports" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN]}><FranchiseReports /></RoleRoute>} />
           {/* Area Management */}
           <Route path="/areas" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN]}><Areas /></RoleRoute>} />
           <Route path="/shops/:shopId/settlements" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN]}><ShopSettlements /></RoleRoute>} />
