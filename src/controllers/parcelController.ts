@@ -19,8 +19,6 @@ export const bookParcel = async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ error: 'Shop ID not found for user. Please re-login.' });
         }
 
-        // Admin might want to specify sourceShopId, but for MVP Shop books for themselves
-        // If Admin books, sourceShopId must be provided in body? Let's assume Shop booking for now.
         const finalShopId = sourceShopId || req.body.sourceShopId;
 
         if (!finalShopId) {
@@ -53,12 +51,24 @@ export const bookParcel = async (req: AuthRequest, res: Response) => {
         }
 
         // Generate Sequential ID: DIST-AREA-0001
-        // We count existing parcels to get the next sequence number.
-        // NOTE: In high-concurrency production, this might need a dedicated Sequence table or DB function.
-        const currentCount = await prisma.parcel.count();
-        const nextSequence = currentCount + 1;
-        const paddedSequence = String(nextSequence).padStart(4, '0');
-        const trackingNumber = `${distCode}-${areaCode}-${paddedSequence}`;
+        // Robust Loop: Count existing, then check if that ID exists. If so, increment until free.
+        let currentCount = await prisma.parcel.count();
+        let nextSequence = currentCount + 1;
+        let paddedSequence = String(nextSequence).padStart(4, '0');
+        let trackingNumber = `${distCode}-${areaCode}-${paddedSequence}`;
+        let isUnique = false;
+
+        // Collision Check Loop (Safety for deleted rows)
+        while (!isUnique) {
+            const existing = await prisma.parcel.findUnique({ where: { trackingNumber } });
+            if (!existing) {
+                isUnique = true;
+            } else {
+                nextSequence++;
+                paddedSequence = String(nextSequence).padStart(4, '0');
+                trackingNumber = `${distCode}-${areaCode}-${paddedSequence}`;
+            }
+        }
 
         // Generate OTP
         const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
@@ -91,20 +101,17 @@ export const bookParcel = async (req: AuthRequest, res: Response) => {
     }
 };
 
-// Update Parcel Status (unchanged, but could add shop checks if needed)
+// Update Parcel Status
 export const updateParcelStatus = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
-
-        // Allowed transitions validation could go here
 
         const parcel = await prisma.parcel.update({
             where: { id: Number(id) },
             data: { status }
         });
 
-        // Notify
         await notifyParcelParticipants(parcel, `Parcel #${id} Status Update: ${status}`);
 
         res.json(parcel);
@@ -115,61 +122,47 @@ export const updateParcelStatus = async (req: AuthRequest, res: Response) => {
 
 import { Role } from '../types';
 
-// Get Parcels (Admin sees all, Shop sees theirs)
+// Get Parcels
 export const listParcels = async (req: AuthRequest, res: Response) => {
     try {
         const user = req.user;
         const shopId = user?.shopId;
 
         let whereClause: any = {};
-        const search = req.query.search as string; // Fix: Define search variable
+        const search = req.query.search as string;
 
         if (shopId) {
-            // If Shop, forced scope
             whereClause = { sourceShopId: Number(shopId) };
         } else if (user?.role === Role.DISTRICT_ADMIN) {
-            // District Admin scope: Strong check
             const u = user as any;
             if (!u.district) {
                 return res.status(400).json({ error: 'District Admin has no assigned district' });
             }
-            // Allow inbound OR outbound
             whereClause.OR = [
                 { district: u.district },
                 { destinationDistrict: u.district }
             ];
 
             if (req.query.shopId) {
-                // Admin filtering by specific shop (Restricts to Outbound from that shop)
                 whereClause = { ...whereClause, sourceShopId: Number(req.query.shopId) };
-                // NOTE: If shopId is present, the OR logic might conflict? 
-                // Wait. If shopId is set, it matches sourceShopId. 
-                // Implicitly sourceShop.district must be user.district if the Shop is valid.
-                // But listShops ensures they only see their shops.
-                // So if they filter by Shop, they are looking at outbound.
-                // The OR logic above works for generic lists. 
-                // If Shop ID is added, Prims ANDs it. 
-                // So (district=My OR dest=My) AND sourceShop=X.
-                // Since Shop X is in My District (verified by UI filter), district=My is true.
-                // So it works.
             }
         }
         if (search) {
             whereClause = {
                 ...whereClause,
                 OR: [
-                    { id: !isNaN(Number(search)) ? Number(search) : undefined }, // Search by ID if number
+                    { trackingNumber: { contains: search, mode: 'insensitive' } }, // Search by Tracking Code
                     { senderMobile: { contains: search } },
                     { receiverMobile: { contains: search } },
                     { deliveryOtp: { equals: search } }
-                ].filter(Boolean) as any // Filter out undefined ID queries
+                ].filter(Boolean) as any
             };
         }
 
         const parcels = await prisma.parcel.findMany({
             where: whereClause,
             include: { sourceShop: true },
-            orderBy: { createdAt: 'desc' } // Good practice to show newest first
+            orderBy: { createdAt: 'desc' }
         });
         res.json(parcels);
     } catch (error) {
@@ -182,8 +175,14 @@ export const listParcels = async (req: AuthRequest, res: Response) => {
 export const getParcelById = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const parcel = await prisma.parcel.findUnique({
-            where: { id: Number(id) },
+        // Allow fetch by ID or Tracking Number
+        const parcel = await prisma.parcel.findFirst({
+            where: {
+                OR: [
+                    { id: Number(id) || undefined }, // If id is number
+                    { trackingNumber: String(id) }   // If id is string (tracking code)
+                ]
+            },
             include: { sourceShop: true, route: true }
         });
         if (!parcel) return res.status(404).json({ error: 'Parcel not found' });
@@ -197,17 +196,16 @@ export const getParcelById = async (req: AuthRequest, res: Response) => {
 export const generateDeliveryOtp = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.body; // parcelId
-        const otp = Math.floor(1000 + Math.random() * 9000).toString(); // 4 digit OTP
+        const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
         await prisma.parcel.update({
             where: { id: Number(id) },
             data: { deliveryOtp: otp }
         });
 
-        // In real app, send SMS here.
         console.log(`[SMS] Delivery OTP for Parcel ${id}: ${otp}`);
 
-        res.json({ message: 'OTP generated', otp }); // Return OTP for MVP demo
+        res.json({ message: 'OTP generated', otp });
     } catch (error) {
         res.status(500).json({ error: 'Failed to generate OTP' });
     }
@@ -229,11 +227,10 @@ export const verifyDelivery = async (req: AuthRequest, res: Response) => {
             where: { id: Number(id) },
             data: {
                 status: 'DELIVERED',
-                deliveryOtp: null // Clear OTP after use
+                deliveryOtp: null
             }
         });
 
-        // Notify
         await notifyParcelParticipants(updated, `Parcel #${id} Delivered Successfully! Thank you using OutPost.`);
 
         res.json(updated);
@@ -250,19 +247,16 @@ export const resendOtp = async (req: AuthRequest, res: Response) => {
 
         if (!parcel) return res.status(404).json({ error: 'Parcel not found' });
 
-        // Security: Only Admin, District Admin (scoped), or Source Shop can resend
         if (req.user?.role === 'SHOP' && parcel.sourceShopId !== req.user.shopId) {
             return res.status(403).json({ error: 'Access denied' });
         }
         if (req.user?.role === 'DISTRICT_ADMIN') {
-            // Strict District Check
             const user = req.user as any;
             const p = parcel as any;
             if (user.district !== p.district && user.district !== p.destinationDistrict) {
                 return res.status(403).json({ error: 'Access denied (District Mismatch)' });
             }
         }
-        // Drivers cannot resend OTP (usually)
 
         const otp = parcel.deliveryOtp;
         if (!otp) return res.status(400).json({ error: 'No OTP exists for this parcel' });
