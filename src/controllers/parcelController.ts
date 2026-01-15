@@ -52,21 +52,26 @@ export const bookParcel = async (req: AuthRequest, res: Response) => {
             }
         }
 
-        const randomSuffix = Math.floor(1000 + Math.random() * 9000); // Temporary placeholder
-        const tempTrackingNumber = `TEMP-${Date.now()}-${randomSuffix}`;
+        // Generate Sequential ID: DIST-AREA-0001
+        // We count existing parcels to get the next sequence number.
+        // NOTE: In high-concurrency production, this might need a dedicated Sequence table or DB function.
+        const currentCount = await prisma.parcel.count();
+        const nextSequence = currentCount + 1;
+        const paddedSequence = String(nextSequence).padStart(4, '0');
+        const trackingNumber = `${distCode}-${areaCode}-${paddedSequence}`;
 
         // Generate OTP
         const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
         const parcel = await prisma.parcel.create({
             data: {
-                trackingNumber: tempTrackingNumber,
+                trackingNumber,
                 senderName,
                 senderMobile,
                 receiverName,
                 receiverMobile,
-                sourceShopId: Number(finalShopId), // Use finalShopId as determined earlier
-                district: shop.district, // STRICT STAMPING
+                sourceShopId: Number(finalShopId),
+                district: shop.district,
                 destinationDistrict,
                 destinationArea,
                 parcelSize,
@@ -77,18 +82,9 @@ export const bookParcel = async (req: AuthRequest, res: Response) => {
             }
         });
 
-        // UPDATE with Sequential ID (DIST-AREA-0001)
-        const paddedId = String(parcel.id).padStart(4, '0');
-        const finalTrackingNumber = `${distCode}-${areaCode}-${paddedId}`;
+        await notifyParcelParticipants(parcel, `Parcel #${parcel.trackingNumber} Booked! OTP: ${deliveryOtp}. Track: http://localhost:5173/tracking`);
 
-        const finalParcel = await prisma.parcel.update({
-            where: { id: parcel.id },
-            data: { trackingNumber: finalTrackingNumber }
-        });
-
-        await notifyParcelParticipants(finalParcel, `Parcel #${finalParcel.trackingNumber} Booked! OTP: ${deliveryOtp}. Track: http://localhost:5173/tracking`);
-
-        res.json(finalParcel);
+        res.json(parcel);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to book parcel', details: (error as any).message });
