@@ -1,13 +1,11 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Package, LogOut, Map, Store, Users, BarChart3, TrendingUp } from 'lucide-react';
 import { Role } from '../types';
-import { useState } from 'react';
-import ProfileModal from './ProfileModal';
 
 const Sidebar = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const [showProfile, setShowProfile] = useState(false);
+
 
     const isActive = (path: string) => location.pathname === path;
 
@@ -153,7 +151,6 @@ const Sidebar = () => {
                 </button>
             </div>
 
-            <ProfileModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
         </div>
     );
 };

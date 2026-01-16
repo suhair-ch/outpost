@@ -20,6 +20,7 @@ import Analytics from './pages/Analytics';
 import Areas from './pages/Areas';
 import Sidebar from './components/Sidebar';
 import PrintLabel from './pages/PrintLabel'; // NEW
+import Profile from './pages/Profile'; // NEW
 
 // Protected Route Wrapper
 const ProtectedLayout = () => {
@@ -98,6 +99,7 @@ function App() {
           // ... imports
 
           {/* SHARED Routes */}
+          <Route path="/profile" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN, Role.SHOP, Role.DRIVER]}><Profile /></RoleRoute>} />
           <Route path="/parcels" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN, Role.SHOP]}><Parcels /></RoleRoute>} />
           <Route path="/print-label/:id" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN, Role.SHOP]}><PrintLabel /></RoleRoute>} />
           <Route path="/settlements" element={<RoleRoute allowedRoles={[Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.ADMIN, Role.SHOP]}><Settlements /></RoleRoute>} />
