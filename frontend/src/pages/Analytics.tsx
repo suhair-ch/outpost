@@ -92,7 +92,7 @@ const Analytics = () => {
                                         outerRadius={80}
                                         paddingAngle={5}
                                     >
-                                        {topDistricts.map((entry, index) => (
+                                        {topDistricts.map((_, index) => (
                                             <Cell key={`cell-${index}`} fill={['#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'][index % 5]} />
                                         ))}
                                     </Pie>

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import client from '../api/client';
-import { LayoutDashboard, MapPin, Phone, Package, Printer } from 'lucide-react';
+import { Printer } from 'lucide-react';
 
 const PrintLabel = () => {
     const { id } = useParams();
