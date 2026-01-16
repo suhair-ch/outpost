@@ -1,10 +1,13 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Package, LogOut, Map, Store, Users, BarChart3, TrendingUp } from 'lucide-react';
 import { Role } from '../types';
+import { useState } from 'react';
+import ProfileModal from './ProfileModal';
 
 const Sidebar = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const [showProfile, setShowProfile] = useState(false);
 
     const isActive = (path: string) => location.pathname === path;
 
@@ -106,7 +109,16 @@ const Sidebar = () => {
             </nav>
 
             <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem', marginTop: 'auto' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)' }}>
+                <div
+                    onClick={() => setShowProfile(true)}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', padding: '0.5rem',
+                        background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)',
+                        cursor: 'pointer', transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                >
                     <div style={{ width: '36px', height: '36px', background: 'var(--bg-elevated)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 'bold' }}>
                         {user?.mobile?.slice(-2) || 'U'}
                     </div>
@@ -140,6 +152,8 @@ const Sidebar = () => {
                     Sign Out
                 </button>
             </div>
+
+            <ProfileModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
         </div>
     );
 };

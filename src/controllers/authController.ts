@@ -260,3 +260,34 @@ export const signup = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ error: 'Signup failed', details: (error as any).message });
     }
 };
+
+// Change Password
+export const changePassword = async (req: AuthRequest, res: Response) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+        const userId = req.user?.userId;
+
+        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+        if (!oldPassword || !newPassword) return res.status(400).json({ error: 'Both passwords required' });
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user || !user.password) return res.status(404).json({ error: 'User not found' });
+
+        // Verify Old
+        const valid = await bcrypt.compare(oldPassword, user.password);
+        if (!valid) return res.status(400).json({ error: 'Incorrect current password' });
+
+        // Hash New
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedPassword }
+        });
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to update password' });
+    }
+};
