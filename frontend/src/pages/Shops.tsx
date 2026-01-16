@@ -54,10 +54,12 @@ const Shops = () => {
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h1>Shops</h1>
-                <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-                    <Plus size={18} />
-                    Add Shop
-                </button>
+                {localStorage.getItem('role') === 'DISTRICT_ADMIN' && (
+                    <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                        <Plus size={18} />
+                        Add Shop
+                    </button>
+                )}
             </div>
 
             {/* Search Bar */}

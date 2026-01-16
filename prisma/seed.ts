@@ -3,39 +3,59 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-// Smart Code Generator
-function generateCode(name: string, district: string): string {
+// Smart Code Generator with Collision Detection
+const usedCodes = new Set<string>();
+
+function generateUniqueCode(name: string, district: string): string {
     const overrides: Record<string, string> = {
-        // District HQs
+        // District HQs & Major Hubs - Fixed
         "Thiruvananthapuram": "TVM", "Kollam": "KLM", "Pathanamthitta": "PTA", "Alappuzha": "ALP",
         "Kottayam": "KTM", "Idukki": "IDK", "Ernakulam": "ERN", "Thrissur": "TCR", "Palakkad": "PKD",
         "Malappuram": "MLP", "Kozhikode": "CLT", "Wayanad": "WND", "Kannur": "KNR", "Kasargod": "KSD",
 
-        // Major Hubs
         "Attingal": "ATG", "Neyyattinkara": "NYK", "Nedumangad": "NMG",
-        "Kottarakkara": "KKR", "Karunagappally": "KPY", "Punalur": "PNL",
-        "Thiruvalla": "TVL", "Adoor": "ADR", "Ranni": "RNI",
-        "Cherthala": "CTL", "Kayamkulam": "KYK", "Mavelikkara": "MVK",
-        "Changanassery": "CHY", "Pala": "PLA", "Vaikom": "VKM",
-        "Thodupuzha": "TDP", "Adimali": "ADL", "Kattappana": "KPN",
+        "Kottakkal": "KTL", "Karakulam": "KRL",
+        "Kuttanad": "KTD", "Kottathara": "KTR",
+        "Kottayam HO": "KTM", "Kuttipuram": "KPM", "Kuthuparamba": "KPR",
+        "Kuttikkanam": "KKN", "Kuttiady": "KTY",
+        "Kakkanad": "KKD", "Kakkodi": "KDI", // Fix KKK Collision
         "Aluva": "ALU", "Muvattupuzha": "MVP", "Tripunithura": "TRP",
-        "Chalakudy": "CKD", "Kunnamkulam": "KNK", "Irinjalakuda": "IJK",
-        "Ottapalam": "OTP", "Mannarkkad": "MNK", "Chittur": "CTR",
-        "Tirur": "TIR", "Perinthalmanna": "PMN", "Manjeri": "MNJ",
-        "Vadakara": "VDK", "Thamarassery": "TMY", "Ramanattukara": "RMK",
-        "Kalpetta": "KPT", "Sulthan Bathery": "SBY", "Mananthavady": "MDY",
-        "Thalassery": "TLY", "Taliparamba": "TPB", "Iritty": "ITY",
-        "Kanhangad": "KGD", "Uppala": "UPL", "Cheruvathur": "CVR"
+        "Tirur": "TIR", "Perinthalmanna": "PMN", "Manjeri": "MNJ"
     };
 
-    if (overrides[name]) return overrides[name];
+    // 1. Check Overrides
+    if (overrides[name] && !usedCodes.has(overrides[name])) {
+        usedCodes.add(overrides[name]);
+        return overrides[name];
+    }
 
     const clean = name.toUpperCase().replace(/[^A-Z]/g, '');
-    let code = clean.substring(0, 3);
 
-    // Improve logic for common prefixes like 'PU', 'KA' if needed, but simplistic is fine for now
-    if (code.length < 3) code = code.padEnd(3, 'X');
-    return code;
+    // Strategies to try in order
+    const strategies = [
+        () => clean.substring(0, 3), // First 3 letters (KAL)
+        () => clean.replace(/[AEIOU]/g, '').substring(0, 3), // First 3 Consonants (KLL)
+        () => clean.substring(0, 4), // First 4 letters (KALA)
+        () => clean.replace(/[AEIOU]/g, '').substring(0, 4), // First 4 Consonants
+        () => clean.substring(0, 2) + clean.substring(clean.length - 1), // First 2 + Last (KA..L)
+        () => clean.substring(0, 2) + 'X', // KAX
+        () => clean.substring(0, 3) + '2' // KAL2 (Last resort)
+    ];
+
+    for (const strategy of strategies) {
+        let code = strategy();
+        if (code.length < 3) code = code.padEnd(3, 'X');
+
+        if (!usedCodes.has(code)) {
+            usedCodes.add(code);
+            return code;
+        }
+    }
+
+    // Fallback: Random suffix if everything fails
+    const fallback = (clean.substring(0, 3) + Math.floor(Math.random() * 9)).substring(0, 4);
+    usedCodes.add(fallback);
+    return fallback;
 }
 
 const keralaData: Record<string, { name: string, pincode: string }[]> = {
@@ -188,7 +208,7 @@ async function main() {
         console.log(`Processing ${district} (${areas.length} areas)...`);
         for (const area of areas) {
             const normalized = area.name.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-            const code = generateCode(area.name, district);
+            const code = generateUniqueCode(area.name, district);
 
             await prisma.area.upsert({
                 where: {

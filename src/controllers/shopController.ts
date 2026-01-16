@@ -35,8 +35,34 @@ export const createShop = async (req: AuthRequest, res: Response) => {
             }
         }
 
-        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-        const shopCode = `${distCode}-${areaCode}-${randomSuffix}`;
+        // Generate Sequential Shop Code: DIST-AREA-001
+        // 1. Determine Prefix
+        const prefix = `${distCode}-${areaCode}`;
+
+        // 2. Count existing shops with this prefix to determine next sequence
+        // Note: In high concurrency, this needs a DB sequence or locking. For MVP, loop-check is sufficient.
+        const existingCount = await prisma.shop.count({
+            where: {
+                shopCode: {
+                    startsWith: prefix
+                }
+            }
+        });
+
+        let nextSequence = existingCount + 1;
+        let shopCode = `${prefix}-${String(nextSequence).padStart(3, '0')}`;
+        let isUnique = false;
+
+        // 3. Collision Check Loop
+        while (!isUnique) {
+            const existing = await prisma.shop.findUnique({ where: { shopCode } });
+            if (!existing) {
+                isUnique = true;
+            } else {
+                nextSequence++;
+                shopCode = `${prefix}-${String(nextSequence).padStart(3, '0')}`;
+            }
+        }
 
         // Hash Temp Password
         const hashedPassword = await bcrypt.hash('1234', 10);
