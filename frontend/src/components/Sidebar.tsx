@@ -70,7 +70,7 @@ const Sidebar = () => {
                 </div>
                 <div>
                     <h2 style={{ margin: 0, fontSize: '1.4rem', letterSpacing: '-0.03em', background: 'linear-gradient(to right, white, #a5b4fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>OUT POST</h2>
-                    <p style={{ margin: 0, color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Logistics</p>
+                    <p style={{ margin: 0, color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Logistics v1.1</p>
                 </div>
             </div>
 
