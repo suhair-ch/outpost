@@ -5,11 +5,13 @@ import { Plus, Search } from 'lucide-react';
 const Areas = () => {
     const [areas, setAreas] = useState<any[]>([]);
     const [districts, setDistricts] = useState<string[]>([]);
+    const [zones, setZones] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
 
     // Filters
     const [selectedDistrict, setSelectedDistrict] = useState('');
+    const [selectedZone, setSelectedZone] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
 
     // Form
@@ -17,7 +19,8 @@ const Areas = () => {
         name: '',
         code: '',
         pincode: '',
-        district: ''
+        district: '',
+        zone: ''
     });
 
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -33,6 +36,10 @@ const Areas = () => {
                 ]);
                 setDistricts(distRes.data);
                 setAreas(areaRes.data);
+
+                // Fetch distinct Zones from the loaded areas
+                const uniqueZones = Array.from(new Set(areaRes.data.map((a: any) => a.zone).filter(Boolean))) as string[];
+                setZones(uniqueZones.sort());
 
                 // If District Admin, pre-set district
                 if (!isSuperAdmin && user.district) {
@@ -53,8 +60,14 @@ const Areas = () => {
         try {
             const { data } = await client.post('/locations/areas', formData);
             setAreas([...areas, data]); // Optimistic update
+
+            // Update Zones list if new zone added
+            if (data.zone && !zones.includes(data.zone)) {
+                setZones([...zones, data.zone].sort());
+            }
+
             setShowModal(false);
-            setFormData({ name: '', code: '', pincode: '', district: isSuperAdmin ? '' : user.district });
+            setFormData({ name: '', code: '', pincode: '', district: isSuperAdmin ? '' : user.district, zone: '' });
             alert('Area Created Successfully!');
         } catch (error: any) {
             alert(error.response?.data?.error || 'Failed to create area');
@@ -64,10 +77,11 @@ const Areas = () => {
     // Filter Logic
     const filteredAreas = areas.filter(area => {
         const matchesDistrict = selectedDistrict ? area.district === selectedDistrict : true;
+        const matchesZone = selectedZone ? area.zone === selectedZone : true;
         const matchesSearch = area.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             area.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             area.pincode?.includes(searchTerm);
-        return matchesDistrict && matchesSearch;
+        return matchesDistrict && matchesZone && matchesSearch;
     });
 
     return (
@@ -75,7 +89,7 @@ const Areas = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div>
                     <h1>Area Management</h1>
-                    <p style={{ color: 'var(--text-dim)' }}>Manage Post Offices and Tracking Codes</p>
+                    <p style={{ color: 'var(--text-dim)' }}>Manage Post Offices, Villages, and Zones</p>
                 </div>
                 <button className="btn btn-primary" onClick={() => setShowModal(true)}>
                     <Plus size={18} />
@@ -84,8 +98,8 @@ const Areas = () => {
             </div>
 
             {/* Filters */}
-            <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
-                <div style={{ flex: 1, position: 'relative' }}>
+            <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ flex: 2, position: 'relative', minWidth: '200px' }}>
                     <input
                         className="input-field"
                         placeholder="Search by Name, Code or Pincode..."
@@ -98,12 +112,22 @@ const Areas = () => {
 
                 <select
                     className="input-field"
-                    style={{ width: '250px' }}
+                    style={{ flex: 1, minWidth: '150px' }}
                     value={selectedDistrict}
                     onChange={e => setSelectedDistrict(e.target.value)}
                 >
                     <option value="">All Districts</option>
                     {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+
+                <select
+                    className="input-field"
+                    style={{ flex: 1, minWidth: '150px' }}
+                    value={selectedZone}
+                    onChange={e => setSelectedZone(e.target.value)}
+                >
+                    <option value="">All Zones</option>
+                    {zones.map(z => <option key={z} value={z}>{z}</option>)}
                 </select>
             </div>
 
@@ -113,6 +137,7 @@ const Areas = () => {
                     <thead>
                         <tr style={{ background: 'rgba(255,255,255,0.05)', textAlign: 'left' }}>
                             <th style={{ padding: '1rem 1.5rem', color: 'var(--text-dim)' }}>Area Name</th>
+                            <th style={{ padding: '1rem 1.5rem', color: 'var(--text-dim)' }}>Zone</th>
                             <th style={{ padding: '1rem 1.5rem', color: 'var(--text-dim)' }}>Code</th>
                             <th style={{ padding: '1rem 1.5rem', color: 'var(--text-dim)' }}>Pincode</th>
                             <th style={{ padding: '1rem 1.5rem', color: 'var(--text-dim)' }}>District</th>
@@ -121,13 +146,23 @@ const Areas = () => {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center' }}>Loading...</td></tr>
+                            <tr><td colSpan={6} style={{ padding: '2rem', textAlign: 'center' }}>Loading...</td></tr>
                         ) : filteredAreas.length === 0 ? (
-                            <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-dim)' }}>No areas found.</td></tr>
+                            <tr><td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-dim)' }}>No areas found.</td></tr>
                         ) : (
                             filteredAreas.map(area => (
                                 <tr key={area.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                                     <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{area.name}</td>
+                                    <td style={{ padding: '1rem 1.5rem' }}>
+                                        {area.zone ? (
+                                            <span style={{
+                                                background: 'rgba(16, 185, 129, 0.1)', color: '#34d399',
+                                                padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem'
+                                            }}>
+                                                {area.zone}
+                                            </span>
+                                        ) : <span style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>-</span>}
+                                    </td>
                                     <td style={{ padding: '1rem 1.5rem' }}>
                                         {area.code ? (
                                             <span style={{
@@ -183,14 +218,29 @@ const Areas = () => {
                             )}
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-dim)' }}>Area Name</label>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-dim)' }}>Area / Village Name</label>
                                 <input
                                     className="input-field"
-                                    placeholder="e.g. Tirur"
+                                    placeholder="e.g. Alathiyur"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     required
                                 />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-dim)' }}>Zone / Cluster (Optional)</label>
+                                <input
+                                    className="input-field"
+                                    placeholder="e.g. Tirur Zone"
+                                    value={formData.zone}
+                                    onChange={e => setFormData({ ...formData, zone: e.target.value })}
+                                    list="zones-list"
+                                />
+                                <datalist id="zones-list">
+                                    {zones.map(z => <option key={z} value={z} />)}
+                                </datalist>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>Group nearby villages into a Zone.</div>
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

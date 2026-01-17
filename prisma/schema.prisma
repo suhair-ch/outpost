@@ -129,6 +129,7 @@ model Area {
   normalizedName  String
   district        String
   pincode         String?   // nullable
+  zone            String?   // Zone/Cluster (e.g. Tirur, Perinthalmanna)
   state           String    @default("Kerala")
   source          AreaSource @default(INDIA_POST)
   isActive        Boolean   @default(true)

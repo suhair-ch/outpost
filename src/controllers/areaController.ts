@@ -21,15 +21,19 @@ export const getDistricts = async (req: Request, res: Response) => {
     }
 };
 
-// Get Areas (Optionally filtered by District)
+// Get Areas (Optionally filtered by District and Zone)
 export const getAreas = async (req: Request, res: Response) => {
     try {
-        const { district } = req.query;
+        const { district, zone } = req.query;
 
         const where: any = { isActive: true };
 
         if (district && typeof district === 'string') {
             where.district = district;
+        }
+
+        if (zone && typeof zone === 'string') {
+            where.zone = zone;
         }
 
         const areas = await prisma.area.findMany({
@@ -43,10 +47,37 @@ export const getAreas = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to fetch areas' });
     }
 };
+
+// Get Unique Zones for a District
+export const getZones = async (req: Request, res: Response) => {
+    try {
+        const { district } = req.query;
+
+        if (!district || typeof district !== 'string') {
+            return res.status(400).json({ error: 'District is required' });
+        }
+
+        const zones = await prisma.area.findMany({
+            where: {
+                district,
+                zone: { not: null }
+            },
+            select: { zone: true },
+            distinct: ['zone'],
+            orderBy: { zone: 'asc' }
+        });
+
+        res.json(zones.map(z => z.zone));
+    } catch (error) {
+        console.error("Get Zones Error:", error);
+        res.status(500).json({ error: 'Failed to fetch zones' });
+    }
+};
+
 // Create New Area
 export const createArea = async (req: AuthRequest, res: Response) => {
     try {
-        const { name, code, pincode, district } = req.body;
+        const { name, code, pincode, district, zone } = req.body; // Added zone
         const user = req.user;
 
         // 1. Authorization & District Scope
@@ -92,6 +123,7 @@ export const createArea = async (req: AuthRequest, res: Response) => {
                 code: upperCode,
                 pincode,
                 district: targetDistrict,
+                zone: zone || null, // Optional Zone
                 isActive: true
             }
         });

@@ -63,8 +63,9 @@ router.post('/settlements/mark-paid', authenticate, requireRole([Role.ADMIN, Rol
 router.get('/dashboard/today', authenticate, requireRole([Role.ADMIN, Role.DISTRICT_ADMIN]), dashboardController.getDailyStats);
 router.get('/dashboard/districts', authenticate, requireRole([Role.ADMIN, Role.DISTRICT_ADMIN]), dashboardController.getDistrictStats); // Allow District Admin (scoped)
 
-// Locations (Public or Auth?) - Let's make it public for Signup, or Auth for internal? Signup needs it public.
+// Locations (Public/Protected)
 router.get('/locations/districts', areaController.getDistricts);
+router.get('/locations/zones', areaController.getZones);
 router.get('/locations/areas', areaController.getAreas);
 router.post('/locations/areas', authenticate, requireRole([Role.SUPER_ADMIN, Role.DISTRICT_ADMIN]), areaController.createArea);
 
