@@ -1,5 +1,6 @@
 // import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Tracking from './pages/Tracking';
@@ -65,7 +66,9 @@ const SmartRedirect = () => {
 
 function App() {
   return (
-    <BrowserRouter>
+    <>
+      <VercelAnalytics />
+      <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
@@ -106,6 +109,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </>
   );
 }
 
