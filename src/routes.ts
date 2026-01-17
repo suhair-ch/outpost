@@ -16,6 +16,7 @@ const router = Router();
 
 // Auth
 router.post('/login', authController.login);
+router.get('/auth/check-invite/:mobile', authController.checkInvite);
 router.post('/auth/signup', authController.signup);
 router.post('/auth/invite', authenticate, requireRole([Role.ADMIN, Role.DISTRICT_ADMIN]), authController.inviteUser);
 router.post('/auth/change-password', authenticate, authController.changePassword);

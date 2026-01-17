@@ -177,12 +177,42 @@ export const verifyOtp = async (req: AuthRequest, res: Response) => {
 // NEW: Invite User (Admin/DA only)
 // Duplicate function removed
 
-// Updated: Shop Sign Up (Invite Claim)
+// NEW: Check Invite Status
+export const checkInvite = async (req: AuthRequest, res: Response) => {
+    const { mobile } = req.params;
+
+    try {
+        const user = await prisma.user.findUnique({ where: { mobile } });
+
+        if (!user) {
+            return res.status(404).json({ error: 'No invite found for this number.' });
+        }
+
+        if (user.status !== 'INVITED') {
+            return res.status(400).json({ error: 'Account already active. Please Login.' });
+        }
+
+        // Return safe info for the frontend to adapt the form
+        res.json({
+            role: user.role,
+            mobile: user.mobile,
+            district: (user as any).district,
+            name: (user as any).name // If we had a name field in User, which we might not for Invite, but good to have logic
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to check invite' });
+    }
+};
+
+// Updated: Smart Shop/User Sign Up
 export const signup = async (req: AuthRequest, res: Response) => {
     const { shopName, ownerName, mobile, password, district } = req.body;
 
-    if (!mobile || !password || !shopName || !ownerName) {
-        return res.status(400).json({ error: 'All fields are required' });
+    // Basic Validation
+    if (!mobile || !password) {
+        return res.status(400).json({ error: 'Mobile and Password are required' });
     }
 
     try {
@@ -195,21 +225,20 @@ export const signup = async (req: AuthRequest, res: Response) => {
         }
 
         if (existingUser.status !== 'INVITED') {
-            // If already ACTIVE, checking if they are trying to double register
-            if (existingUser.role === 'SHOP') {
-                // Check if Shop exists
-                const shopExists = await prisma.shop.findUnique({ where: { mobileNumber: mobile } });
-                if (shopExists) return res.status(400).json({ error: 'Account already active. Please Login.' });
-                // If User is active but no Shop (rare edge case), proceed? No, assume consistency.
-                return res.status(400).json({ error: 'Account already active. Please Login.' });
-            }
             return res.status(400).json({ error: 'Account already active. Please Login.' });
+        }
+
+        // Role-Specific Validation
+        if (existingUser.role === 'SHOP') {
+            if (!shopName || !ownerName) {
+                return res.status(400).json({ error: 'Shop Name and Owner Name are required for Shops.' });
+            }
         }
 
         // Hash Password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Transaction: Activate User + Create Shop
+        // Transaction: Activate User + Create Shop (if needed)
         console.log('Starting Signup Transaction...');
         const result = await prisma.$transaction(async (tx) => {
             console.log('Updating User...');
@@ -222,38 +251,55 @@ export const signup = async (req: AuthRequest, res: Response) => {
             });
             console.log('User Updated:', user.mobile);
 
-            // Ensure district consistency from Invite
-            const finalDistrict = (user as any).district || district || 'Unknown';
-            console.log('Creating Shop with District:', finalDistrict);
+            let shop = null;
 
-            // Generate Shop Code
-            const distCode = (finalDistrict || 'KER').substring(0, 3).toUpperCase();
-            const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-            const shopCode = `${distCode}-SHP-${randomSuffix}`;
+            // ONLY Create Shop if role is SHOP
+            if (user.role === 'SHOP') {
+                // Ensure district consistency from Invite
+                const finalDistrict = (user as any).district || district || 'Unknown';
+                console.log('Creating Shop with District:', finalDistrict);
 
-            const shop = await tx.shop.create({
-                data: {
-                    shopCode,
-                    shopName,
-                    ownerName,
-                    mobileNumber: mobile, // Link by mobile
-                    district: finalDistrict,
-                    commission: 0.0
-                }
-            });
-            console.log('Shop Created:', shop.id);
+                // Generate Shop Code
+                const distCode = (finalDistrict || 'KER').substring(0, 3).toUpperCase();
+                const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+                const shopCode = `${distCode}-SHP-${randomSuffix}`;
+
+                shop = await tx.shop.create({
+                    data: {
+                        shopCode,
+                        shopName, // Guaranteed by validation above
+                        ownerName, // Guaranteed by validation above
+                        mobileNumber: mobile, // Link by mobile
+                        district: finalDistrict,
+                        commission: 0.0
+                    }
+                });
+                console.log('Shop Created:', shop.id);
+            } else {
+                console.log('Skipping Shop creation for role:', user.role);
+            }
 
             return { user, shop };
         });
 
         // Auto-Login
+        const tokenPayload: any = {
+            userId: result.user.id,
+            mobile: result.user.mobile,
+            role: result.user.role,
+        };
+
+        if (result.shop) {
+            tokenPayload.shopId = result.shop.id;
+        }
+
         const token = jwt.sign(
-            { userId: result.user.id, mobile: result.user.mobile, role: result.user.role, shopId: result.shop.id },
+            tokenPayload,
             JWT_SECRET,
             { expiresIn: '7d' }
         );
 
-        res.json({ token, user: result.user, shop: result.shop, shopId: result.shop.id });
+        res.json({ token, user: result.user, shop: result.shop, shopId: result.shop?.id });
 
     } catch (error) {
         console.error(error);

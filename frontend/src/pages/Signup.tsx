@@ -6,23 +6,57 @@ import client from '../api/client';
 
 const Signup = () => {
     const navigate = useNavigate();
+    const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         shopName: '',
         ownerName: '',
         mobile: '',
-        password: ''
+        password: '',
+        confirmPassword: ''
     });
+    const [inviteInfo, setInviteInfo] = useState<any>(null);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleCheckInvite = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
+        if (formData.mobile.length !== 10) {
+            setError('Please enter a valid 10-digit mobile number');
+            setLoading(false);
+            return;
+        }
+
         try {
-            await client.post('/auth/signup', formData);
-            alert('Account created successfully! Please login.');
+            const res = await client.get(`/auth/check-invite/${formData.mobile}`);
+            setInviteInfo(res.data);
+            setStep(2);
+        } catch (err: any) {
+            setError(err.response?.data?.error || 'No invite found for this number.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            await client.post('/auth/signup', {
+                ...formData,
+                district: inviteInfo?.district
+            });
+            alert('Account activated successfully! Please login.');
             navigate('/login');
         } catch (err: any) {
             setError(err.response?.data?.error || 'Signup failed');
@@ -50,84 +84,138 @@ const Signup = () => {
                     }}>
                         <UserPlus size={32} color="white" />
                     </div>
-                    <h1 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>Partner Sign Up</h1>
-                    <p style={{ color: 'var(--text-dim)' }}>Join OUT POST network</p>
+                    <h1 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>
+                        {step === 1 ? 'Claim Accounts' : 'Complete Setup'}
+                    </h1>
+                    <p style={{ color: 'var(--text-dim)' }}>
+                        {step === 1 ? 'Enter your mobile number to check invite' : `Setting up as ${inviteInfo?.role?.replace('_', ' ')}`}
+                    </p>
                 </div>
 
                 {error && (
                     <div style={{
                         padding: '1rem', background: 'rgba(239, 68, 68, 0.1)',
                         border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444',
-                        marginBottom: '1.5rem', fontSize: '0.9rem'
+                        marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center'
                     }}>
                         {error}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                {step === 1 ? (
+                    <form onSubmit={handleCheckInvite} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                        <div className="input-group">
+                            <span style={{ margin: '0 1rem', fontWeight: 'bold', color: 'var(--text-dim)' }}>+91</span>
+                            <input
+                                type="tel"
+                                placeholder="Mobile Number"
+                                required
+                                maxLength={10}
+                                value={formData.mobile}
+                                onChange={e => setFormData({ ...formData, mobile: e.target.value })}
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={loading}
+                            style={{ marginTop: '1rem', padding: '1rem' }}
+                        >
+                            {loading ? 'Checking Invite...' : 'Check Invite'}
+                        </button>
+                    </form>
+                ) : (
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
 
-                    <div className="input-group">
-                        <Store size={20} style={{ margin: '0 1rem', color: 'var(--text-dim)' }} />
-                        <input
-                            type="text"
-                            placeholder="Shop Name"
-                            required
-                            value={formData.shopName}
-                            onChange={e => setFormData({ ...formData, shopName: e.target.value })}
-                        />
-                    </div>
+                        {/* Context Display */}
+                        <div style={{
+                            padding: '1rem', background: 'rgba(99, 102, 241, 0.1)',
+                            border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: '8px',
+                            marginBottom: '0.5rem', fontSize: '0.9rem', color: '#c7d2fe',
+                            display: 'flex', flexDirection: 'column', gap: '0.25rem'
+                        }}>
+                            <div><strong>Role:</strong> {inviteInfo?.role}</div>
+                            {inviteInfo?.district && <div><strong>District:</strong> {inviteInfo.district}</div>}
+                            <div><strong>Mobile:</strong> {inviteInfo?.mobile}</div>
+                        </div>
 
-                    <div className="input-group">
-                        <ShoppingBag size={20} style={{ margin: '0 1rem', color: 'var(--text-dim)' }} />
-                        <input
-                            type="text"
-                            placeholder="Owner Name"
-                            required
-                            value={formData.ownerName}
-                            onChange={e => setFormData({ ...formData, ownerName: e.target.value })}
-                        />
-                    </div>
+                        {/* SHOP Fields */}
+                        {inviteInfo?.role === 'SHOP' && (
+                            <>
+                                <div className="input-group">
+                                    <Store size={20} style={{ margin: '0 1rem', color: 'var(--text-dim)' }} />
+                                    <input
+                                        type="text"
+                                        placeholder="Shop Name"
+                                        required
+                                        value={formData.shopName}
+                                        onChange={e => setFormData({ ...formData, shopName: e.target.value })}
+                                    />
+                                </div>
 
-                    <div className="input-group">
-                        <span style={{ margin: '0 1rem', fontWeight: 'bold', color: 'var(--text-dim)' }}>+91</span>
-                        <input
-                            type="tel"
-                            placeholder="Mobile Number"
-                            required
-                            maxLength={10}
-                            value={formData.mobile}
-                            onChange={e => setFormData({ ...formData, mobile: e.target.value })}
-                        />
-                    </div>
+                                <div className="input-group">
+                                    <ShoppingBag size={20} style={{ margin: '0 1rem', color: 'var(--text-dim)' }} />
+                                    <input
+                                        type="text"
+                                        placeholder="Owner Name"
+                                        required
+                                        value={formData.ownerName}
+                                        onChange={e => setFormData({ ...formData, ownerName: e.target.value })}
+                                    />
+                                </div>
+                            </>
+                        )}
 
-                    <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '1rem', color: 'var(--text-dim)', fontSize: '0.9rem', textAlign: 'center' }}>
-                        Location assigned by Invite
-                    </div>
+                        {/* Common Fields */}
+                        <div className="input-group">
+                            <Lock size={20} style={{ margin: '0 1rem', color: 'var(--text-dim)' }} />
+                            <input
+                                type="password"
+                                placeholder="Create Password"
+                                required
+                                value={formData.password}
+                                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                            />
+                        </div>
 
-                    <div className="input-group">
-                        <Lock size={20} style={{ margin: '0 1rem', color: 'var(--text-dim)' }} />
-                        <input
-                            type="password"
-                            placeholder="Password"
-                            required
-                            value={formData.password}
-                            onChange={e => setFormData({ ...formData, password: e.target.value })}
-                        />
-                    </div>
+                        <div className="input-group">
+                            <Lock size={20} style={{ margin: '0 1rem', color: 'var(--text-dim)' }} />
+                            <input
+                                type="password"
+                                placeholder="Confirm Password"
+                                required
+                                value={formData.confirmPassword}
+                                onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
+                            />
+                        </div>
 
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={loading}
-                        style={{ marginTop: '1rem', padding: '1rem' }}
-                    >
-                        {loading ? 'Creating Account...' : 'Create Account'}
-                    </button>
+                        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                            <button
+                                type="button"
+                                onClick={() => setStep(1)}
+                                style={{
+                                    flex: 1, padding: '1rem', background: 'transparent',
+                                    border: '1px solid var(--glass-border)', color: 'var(--text-dim)',
+                                    borderRadius: '12px', cursor: 'pointer'
+                                }}
+                            >
+                                Back
+                            </button>
+                            <button
+                                type="submit"
+                                className="btn btn-primary"
+                                disabled={loading}
+                                style={{ flex: 2, padding: '1rem' }}
+                            >
+                                {loading ? 'Activating...' : 'Activate Account'}
+                            </button>
+                        </div>
+                    </form>
+                )}
 
-                    <div style={{ textAlign: 'center', marginTop: '1rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>
-                        Already have an account? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600 }}>Login here</Link>
-                    </div>
-                </form>
+                <div style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>
+                    Already active? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600 }}>Login here</Link>
+                </div>
             </div>
         </div>
     );

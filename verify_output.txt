@@ -1,0 +1,19 @@
+--- Verifying Smart Signup Flow ---
+Cleanup done.
+Invites created.
+
+Testing Step 1 for DA...
+PASS: DA Invite Found: {"role":"DISTRICT_ADMIN","mobile":"9999911111","district":"Malappuram"}
+
+Testing Step 1 for Shop...
+PASS: Shop Invite Found: {"role":"SHOP","mobile":"9999922222","district":"Kozhikode"}
+
+Testing Signup DA (Should succeed without shop details)...
+PASS: DA Signup Success: ACTIVE
+
+Testing Signup Shop (Missing Shop Name - Should Fail)...
+PASS: Correctly rejected missing shop name
+
+Testing Signup Shop (Correct details)...
+PASS: Shop Signup Success: ACTIVE
+PASS: Shop ID: 9
