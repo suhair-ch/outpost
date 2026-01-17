@@ -107,24 +107,26 @@ const Sidebar = () => {
             </nav>
 
             <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem', marginTop: 'auto' }}>
-                <div
-                    onClick={() => setShowProfile(true)}
+                <Link
+                    to="/profile"
                     style={{
                         display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', padding: '0.5rem',
                         background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)',
-                        cursor: 'pointer', transition: 'all 0.2s'
+                        cursor: 'pointer', transition: 'all 0.2s',
+                        textDecoration: 'none',
+                        color: 'inherit'
                     }}
                     onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
                     onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
                 >
-                    <div style={{ width: '36px', height: '36px', background: 'var(--bg-elevated)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                    <div style={{ width: '36px', height: '36px', background: 'var(--bg-elevated)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 'bold', color: 'white' }}>
                         {user?.mobile?.slice(-2) || 'U'}
                     </div>
                     <div style={{ overflow: 'hidden' }}>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600, whiteSpace: 'nowrap' }}>{user?.role || 'User'}</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, whiteSpace: 'nowrap', color: 'white' }}>{user?.role || 'User'}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{user?.mobile}</div>
                     </div>
-                </div>
+                </Link>
 
                 <button
                     onClick={handleLogout}
