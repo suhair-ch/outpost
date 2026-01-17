@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Package, Truck, CheckCircle, TrendingUp, Users } from 'lucide-react';
+import { Package, Truck, CheckCircle, TrendingUp, Users, MessageCircle } from 'lucide-react';
 import client from '../api/client';
 
 const StatCard = ({ title, value, icon: Icon, color }: any) => (
@@ -95,10 +95,26 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    <div className="glass-panel" style={{ padding: '2rem', minHeight: '300px' }}>
-                        <h3>Combined Performance</h3>
-                        <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--glass-border)', borderRadius: 'var(--radius-md)', color: 'var(--text-dim)' }}>
-                            <p>Analytics Chart Loading...</p>
+                    <div className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
+                        <div style={{
+                            padding: '1.5rem 2rem',
+                            background: 'rgba(255,255,255,0.03)',
+                            borderBottom: '1px solid var(--glass-border)',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{
+                                    width: '32px', height: '32px',
+                                    background: 'rgba(245, 158, 11, 0.1)', color: '#fbbf24',
+                                    borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    <TrendingUp size={18} />
+                                </div>
+                                <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Pending Activations</h3>
+                            </div>
+                        </div>
+                        <div style={{ padding: '1.5rem 2rem' }}>
+                            <PendingInvitesList />
                         </div>
                     </div>
                 </div>
@@ -261,5 +277,63 @@ const InviteManager = () => {
         </div>
     )
 }
+
+// Widget for Pending Invites
+const PendingInvitesList = () => {
+    const [pendingShops, setPendingShops] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        client.get('/shops')
+            .then(res => {
+                const invited = res.data.filter((s: any) => s.userStatus === 'INVITED');
+                setPendingShops(invited);
+            })
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, []);
+
+    const sendNudge = (shop: any) => {
+        const text = `Hello ${shop.ownerName}, your *${shop.shopName}* account is ready! 🚀\n\nLogin here: http://localhost:5173/login\nMobile: ${shop.mobileNumber}\n\nPlease login to set your secure password.`;
+        const url = `https://wa.me/91${shop.mobileNumber}?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
+    };
+
+    if (loading) return <div style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>Loading invites...</div>;
+    if (pendingShops.length === 0) return <div style={{ color: 'var(--text-dim)', fontSize: '0.9rem', fontStyle: 'italic' }}>No pending invites. Everyone is active! 🎉</div>;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {pendingShops.map(shop => (
+                <div key={shop.shopCode} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px',
+                    border: '1px solid var(--glass-border)'
+                }}>
+                    <div>
+                        <div style={{ fontWeight: 600, fontSize: '1rem' }}>{shop.shopName}</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <span>{shop.ownerName}</span>
+                            <span>•</span>
+                            <span>{shop.mobileNumber}</span>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={() => sendNudge(shop)}
+                        className="btn"
+                        style={{
+                            background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.3)',
+                            padding: '0.5rem 1rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem'
+                        }}
+                    >
+                        <MessageCircle size={16} />
+                        Nudge
+                    </button>
+                </div>
+            ))}
+        </div>
+    );
+};
 
 export default Dashboard;

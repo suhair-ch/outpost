@@ -119,9 +119,13 @@ const DriverDashboard = () => {
                                     {group.parcels.map((parcel: any) => (
                                         <div key={parcel.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
                                             <div>
-                                                <div style={{ fontWeight: 'bold' }}>#{parcel.id} to {parcel.receiverName}</div>
+                                                <div style={{ fontWeight: 'bold' }}>#{parcel.trackingNumber || parcel.id} to {parcel.receiverName}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#fbbf24' }}>
+                                                    {parcel.destinationZone}
+                                                    {parcel.destinationArea && <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}> • {parcel.destinationArea}</span>}
+                                                </div>
                                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>
-                                                    {parcel.destinationDistrict} | ₹{parcel.price}
+                                                    {parcel.destinationDistrict} | ₹{parcel.price} | {parcel.paymentMode}
                                                 </div>
                                                 <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', marginTop: '0.2rem', display: 'inline-block' }}>
                                                     {parcel.status}

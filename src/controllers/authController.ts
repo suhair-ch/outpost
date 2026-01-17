@@ -5,11 +5,10 @@ import { AuthRequest } from '../types';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { sendSms } from '../services/smsService';
+import { KERALA_DISTRICTS } from '../constants';
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
-
-import { KERALA_DISTRICTS } from '../constants';
 
 // Create User (District Admin or other roles)
 export const inviteUser = async (req: AuthRequest, res: Response) => {
@@ -49,8 +48,6 @@ export const inviteUser = async (req: AuthRequest, res: Response) => {
             if (existingAdmin) {
                 return res.status(400).json({ error: `An Admin for ${district} already exists (${existingAdmin.mobile}). Only 1 per district allowed.` });
             }
-
-            // finalDistrict remains as passed in body
         }
 
         if (currentUserRole === 'DISTRICT_ADMIN') {
@@ -94,77 +91,107 @@ export const inviteUser = async (req: AuthRequest, res: Response) => {
 
 export const sendOtp = async (req: AuthRequest, res: Response) => {
     const { mobile } = req.body;
-    const otp = '1234'; // For MVP we are keeping static OTP, but in real life we would generate random
-
-    // In production we would generate random: Math.floor(1000 + Math.random() * 9000).toString();
-
+    const otp = '1234'; // For MVP we are keeping static OTP
     await sendSms(mobile, `Your Login OTP is: ${otp}`);
     res.json({ message: 'OTP sent', otp });
 };
 
 // Unified Login (OTP or Password)
 export const login = async (req: AuthRequest, res: Response) => {
-    const { mobile, password, otp } = req.body; // Removed 'role' from input
-    console.log(`Login Attempt: Mobile=${mobile}, OTP=${otp}, Pass=${password ? 'YES' : 'NO'}`);
+    const { mobile, password, otp } = req.body;
+    console.log(`Login Attempt: Mobile=${mobile}`);
 
-    if (!mobile) {
-        return res.status(400).json({ error: 'Mobile number is required' });
-    }
+    if (!mobile) return res.status(400).json({ error: 'Mobile number is required' });
 
     try {
-        // Find user
-        let user = await prisma.user.findUnique({ where: { mobile } });
-
-        if (!user) {
-            console.log('User Lookup Result: NOT FOUND for', mobile, 'in DB');
-            return res.status(404).json({ error: 'User not found. Please Sign Up or ask Admin.' });
-        }
-        console.log('User Lookup Result: FOUND', user.id, user.role);
+        const user = await prisma.user.findUnique({ where: { mobile } });
+        if (!user) return res.status(404).json({ error: 'User not found.' });
 
         // Authentication Logic
-        if (!password) {
-            return res.status(400).json({ error: 'Password is required' });
+        if (user.status === 'INVITED') {
+            return res.status(403).json({ error: 'REQUIRE_SETUP', message: 'Account requires setup.' });
         }
 
-        // Strict Password Check
-        if (!user.password) {
-            return res.status(400).json({ error: 'Account not set up for password login. Contact Admin.' });
-        }
+        if (!password) return res.status(400).json({ error: 'Password is required' });
 
-        const valid = await bcrypt.compare(password, user.password);
-        if (!valid) {
-            return res.status(401).json({ error: 'Invalid Credentials' });
-        }
+        const valid = await bcrypt.compare(password, user.password || '');
+        if (!valid) return res.status(400).json({ error: 'Invalid credentials' });
 
+        // Fetch Shop ID if applicable
         let shopId: number | undefined;
-
         if (user.role === 'SHOP') {
-            const shop = await prisma.shop.findUnique({
-                where: { mobileNumber: mobile }
-            });
-            if (shop) {
-                shopId = shop.id;
-            }
+            const shop = await prisma.shop.findUnique({ where: { mobileNumber: mobile } });
+            if (shop) shopId = shop.id;
         }
 
         const token = jwt.sign(
             {
-                userId: user.id,
-                mobile: user.mobile,
+                id: user.id,
+                userId: user.id, // Legacy compatibility
                 role: user.role,
-                shopId,
-                district: (user as any).district // Add district to token
+                district: user.district,
+                shopId: shopId
             },
             JWT_SECRET,
-            { expiresIn: '7d' }
+            { expiresIn: '30d' }
         );
 
-        // Return detected role to frontend
-        res.json({ token, user, shopId, role: user.role, district: (user as any).district });
-
+        res.json({ token, user, role: user.role, shopId });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Login failed' });
+    }
+};
+
+export const verifyOtpAndSetPassword = async (req: AuthRequest, res: Response) => {
+    try {
+        const { mobile, otp, password } = req.body;
+
+        // Mock OTP Check
+        if (otp !== '1234') {
+            return res.status(400).json({ error: 'Invalid OTP' });
+        }
+
+        const user = await prisma.user.findUnique({ where: { mobile } });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        if (user.status !== 'INVITED') {
+            return res.status(400).json({ error: 'Account is already active. Please login.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const updatedUser = await prisma.user.update({
+            where: { mobile },
+            data: {
+                status: 'ACTIVE',
+                password: hashedPassword
+            }
+        });
+
+        // Fetch Shop ID for Token link
+        let shopId: number | undefined;
+        if (updatedUser.role === 'SHOP') {
+            const shop = await prisma.shop.findUnique({ where: { mobileNumber: mobile } });
+            if (shop) shopId = shop.id;
+        }
+
+        const token = jwt.sign(
+            {
+                id: updatedUser.id,
+                userId: updatedUser.id,
+                role: updatedUser.role,
+                district: updatedUser.district,
+                shopId
+            },
+            JWT_SECRET,
+            { expiresIn: '30d' }
+        );
+
+        res.json({ token, user: updatedUser, role: updatedUser.role, shopId });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Setup failed' });
     }
 };
 
@@ -174,10 +201,7 @@ export const verifyOtp = async (req: AuthRequest, res: Response) => {
     return login(req, res);
 };
 
-// NEW: Invite User (Admin/DA only)
-// Duplicate function removed
-
-// NEW: Check Invite Status
+// Check Invite Status
 export const checkInvite = async (req: AuthRequest, res: Response) => {
     const { mobile } = req.params;
 
@@ -197,7 +221,7 @@ export const checkInvite = async (req: AuthRequest, res: Response) => {
             role: user.role,
             mobile: user.mobile,
             district: (user as any).district,
-            name: (user as any).name // If we had a name field in User, which we might not for Invite, but good to have logic
+            name: (user as any).name
         });
 
     } catch (error) {
@@ -206,7 +230,7 @@ export const checkInvite = async (req: AuthRequest, res: Response) => {
     }
 };
 
-// Updated: Smart Shop/User Sign Up
+// Smart Shop/User Sign Up (Legacy/Driver Public Signup)
 export const signup = async (req: AuthRequest, res: Response) => {
     const { shopName, ownerName, mobile, password, district } = req.body;
 

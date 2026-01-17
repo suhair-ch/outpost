@@ -20,6 +20,7 @@ router.get('/auth/check-invite/:mobile', authController.checkInvite);
 router.post('/auth/signup', authController.signup);
 router.post('/auth/invite', authenticate, requireRole([Role.ADMIN, Role.DISTRICT_ADMIN]), authController.inviteUser);
 router.post('/auth/change-password', authenticate, authController.changePassword);
+router.post('/auth/setup-account', authController.verifyOtpAndSetPassword); // Verify & Set Password
 router.post('/auth/send-otp', authController.sendOtp);
 router.post('/auth/verify-otp', authController.verifyOtp);
 router.get('/public/track/:id', trackParcel);

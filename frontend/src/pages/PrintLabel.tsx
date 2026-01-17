@@ -76,12 +76,26 @@ const PrintLabel = () => {
                 </div>
 
                 {/* To Address (Big) */}
-                <div style={{ padding: '1.5rem 0', flex: 1 }}>
-                    <div style={{ fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Ship To:</div>
+                <div style={{ padding: '1rem 0', flex: 1 }}>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Ship To:</div>
                     <div style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.25rem' }}>{parcel.receiverName}</div>
-                    <div style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>{parcel.receiverMobile}</div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>{parcel.destinationDistrict}</div>
-                    {parcel.destinationArea && <div style={{ fontSize: '1rem' }}>{parcel.destinationArea}</div>}
+                    <div style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>{parcel.receiverMobile}</div>
+
+                    {/* Destination Box */}
+                    <div style={{ border: '2px solid black', padding: '0.5rem', marginTop: '0.5rem', borderRadius: '4px', background: '#f8fafc' }}>
+                        <div style={{ fontSize: '1rem', fontWeight: 600 }}>{parcel.destinationDistrict}</div>
+                        {parcel.destinationArea && <div style={{ fontSize: '1.2rem' }}>{parcel.destinationArea}</div>}
+
+                        {/* Zone Highlight */}
+                        {parcel.destinationZone && (
+                            <div style={{ marginTop: '0.5rem', borderTop: '2px dashed #cbd5e1', paddingTop: '0.5rem' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase' }}>Routing Zone</div>
+                                <div style={{ fontSize: '1.8rem', fontWeight: 900, textTransform: 'uppercase' }}>
+                                    {parcel.destinationZone}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Tracking & QR */}

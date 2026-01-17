@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, MapPin, Phone } from 'lucide-react';
 import client from '../api/client';
+import LocationSelector from '../components/LocationSelector';
 
 const Shops = () => {
     const navigate = useNavigate();
@@ -16,6 +17,7 @@ const Shops = () => {
         ownerName: '',
         mobileNumber: '',
         district: '',
+        area: '', // Add Area
         commission: 0,
         isHub: false
     });
@@ -38,7 +40,7 @@ const Shops = () => {
         try {
             await client.post('/shops', formData);
             setShowModal(false);
-            setFormData({ shopName: '', ownerName: '', mobileNumber: '', district: '', commission: 0, isHub: false });
+            setFormData({ shopName: '', ownerName: '', mobileNumber: '', district: '', area: '', commission: 0, isHub: false });
             fetchShops(); // Refresh list
         } catch (error: any) {
             alert(error.response?.data?.details || 'Failed to create shop');
@@ -136,10 +138,18 @@ const Shops = () => {
                                 <input required placeholder="Shop Name" className="input-field" value={formData.shopName} onChange={e => setFormData({ ...formData, shopName: e.target.value })} />
                                 <input required placeholder="Owner Name" className="input-field" value={formData.ownerName} onChange={e => setFormData({ ...formData, ownerName: e.target.value })} />
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <input required placeholder="Mobile Number" className="input-field" value={formData.mobileNumber} onChange={e => setFormData({ ...formData, mobileNumber: e.target.value })} />
-                                <input required placeholder="District" className="input-field" value={formData.district} onChange={e => setFormData({ ...formData, district: e.target.value })} />
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-dim)' }}>Location</label>
+                                <LocationSelector
+                                    className="location-selector"
+                                    onSelect={(loc) => setFormData({ ...formData, district: loc.district, area: loc.area })}
+                                />
+                                {formData.area && <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '0.2rem' }}>Selected: {formData.area}, {formData.district}</div>}
                             </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                                <input required placeholder="Mobile Number" className="input-field" value={formData.mobileNumber} onChange={e => setFormData({ ...formData, mobileNumber: e.target.value })} />
+                            </div>
+
                             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                 <input type="number" placeholder="Commission (₹)" className="input-field" style={{ flex: 1 }} value={formData.commission} onChange={e => setFormData({ ...formData, commission: Number(e.target.value) })} />
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'white', cursor: 'pointer' }}>

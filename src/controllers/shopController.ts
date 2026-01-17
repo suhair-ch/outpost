@@ -82,24 +82,24 @@ export const createShop = async (req: AuthRequest, res: Response) => {
                 }
             });
 
-            // Create User STRICTLY (Upsert might overwrite admin actions? Better to strict create or fail if exists)
-            // User said "Users do NOT self-register". So if mobile exists, it's a conflict? 
-            // Or maybe upgrading a user?
-            // "Shop record created -> User record created"
+            // Create User STRICTLY
+            // 1. Generate a random password (UUID or Random Bytes) - User NEVER knows this
+            const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+            const hashedRandomPassword = await bcrypt.hash(randomPassword, 10);
+
             const user = await tx.user.upsert({
                 where: { mobile: mobileNumber },
                 update: {
                     role: 'SHOP',
                     district: district,
-                    password: hashedPassword
                 },
                 create: {
                     mobile: mobileNumber,
                     role: 'SHOP',
                     district: district,
-                    status: 'ACTIVE',
+                    status: 'INVITED', // <--- Key Change
                     otp: null,
-                    password: hashedPassword
+                    password: hashedRandomPassword // <--- Key Change
                 }
             });
 
@@ -127,9 +127,26 @@ export const listShops = async (req: AuthRequest, res: Response) => {
             whereClause.district = user.district;
         }
 
-        const shops = await prisma.shop.findMany({ where: whereClause });
-        res.json(shops);
+        const shops = await prisma.shop.findMany({
+            where: whereClause,
+            orderBy: { createdAt: 'desc' }
+        });
+
+        // Enrich with User Status (INVITED vs ACTIVE)
+        const enrichedShops = await Promise.all(shops.map(async (shop) => {
+            const shopUser = await prisma.user.findUnique({
+                where: { mobile: shop.mobileNumber },
+                select: { status: true }
+            });
+            return {
+                ...shop,
+                userStatus: shopUser?.status || 'UNKNOWN'
+            };
+        }));
+
+        res.json(enrichedShops);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to fetch shops' });
     }
 };

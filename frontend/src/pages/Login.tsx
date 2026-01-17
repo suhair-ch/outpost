@@ -14,6 +14,10 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    const [showSetupModal, setShowSetupModal] = useState(false);
+    const [otp, setOtp] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -26,27 +30,46 @@ const Login = () => {
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             localStorage.setItem('role', data.role);
+            handleRedirect(data.role);
 
-            // Auto-redirect based on role
-            switch (data.role) {
-                case Role.SUPER_ADMIN:
-                case Role.DISTRICT_ADMIN:
-                case Role.ADMIN:
-                    navigate('/dashboard');
-                    break;
-                case Role.SHOP:
-                    navigate('/shop-dashboard');
-                    break;
-                case Role.DRIVER:
-                    navigate('/driver-dashboard');
-                    break;
-                default:
-                    navigate('/dashboard');
-            }
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Login failed');
+            if (err.response?.data?.error === 'REQUIRE_SETUP') {
+                setShowSetupModal(true);
+                // Trigger OTP send automatically or ask user? 
+                // Let's autopopulate mobile in modal
+                client.post('/auth/send-otp', { mobile });
+            } else {
+                setError(err.response?.data?.error || 'Login failed');
+            }
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleRedirect = (role: string) => {
+        switch (role) {
+            case Role.SUPER_ADMIN:
+            case Role.DISTRICT_ADMIN:
+            case Role.ADMIN: navigate('/dashboard'); break;
+            case Role.SHOP: navigate('/shop-dashboard'); break;
+            case Role.DRIVER: navigate('/driver-dashboard'); break;
+            default: navigate('/dashboard');
+        }
+    };
+
+    const handleSetup = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const { data } = await client.post('/auth/setup-account', {
+                mobile, otp, password: newPassword
+            });
+            alert('Account Activated Successfully!');
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem('role', data.role);
+            handleRedirect(data.role);
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'Setup failed');
         }
     };
 
@@ -117,6 +140,29 @@ const Login = () => {
                     </div>
                 </form>
             </div>
+
+            {/* Setup Modal */}
+            {showSetupModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h2>Setup Account Security</h2>
+                        <p style={{ color: 'var(--text-dim)', marginBottom: '1.5rem' }}>
+                            Welcome! Since this is your first login, please verify your mobile and set a secure password.
+                        </p>
+                        <form onSubmit={handleSetup} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Mobile OTP (Sent to {mobile})</label>
+                                <input className="input-field" placeholder="Enter OTP (1234)" value={otp} onChange={e => setOtp(e.target.value)} required />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>New Secure Password</label>
+                                <input className="input-field" type="password" placeholder="New Password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required />
+                            </div>
+                            <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>Activate Account</button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
