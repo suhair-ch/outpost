@@ -54,6 +54,7 @@ router.post('/routes/create', authenticate, requireRole([Role.ADMIN, Role.DISTRI
 router.post('/routes/assign-parcel', authenticate, requireRole([Role.ADMIN, Role.DISTRICT_ADMIN]), routeController.assignParcel);
 router.post('/routes/close', authenticate, requireRole([Role.ADMIN, Role.DISTRICT_ADMIN]), routeController.closeRoute);
 router.get('/routes', authenticate, requireRole([Role.SUPER_ADMIN, Role.DISTRICT_ADMIN, Role.DRIVER]), routeController.listRoutes);
+router.get('/routes/suggestions', authenticate, requireRole([Role.DISTRICT_ADMIN]), routeController.getRouteSuggestions);
 
 // Settlements
 router.get('/shops/:shopId/earnings', authenticate, requireRole([Role.ADMIN, Role.DISTRICT_ADMIN, Role.SHOP]), settlementController.getShopEarnings);

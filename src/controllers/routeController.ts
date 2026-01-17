@@ -114,3 +114,42 @@ export const listRoutes = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ error: 'Failed to fetch routes' });
     }
 };
+
+// Smart Suggestions: Get aggregated pending parcels by Zone
+export const getRouteSuggestions = async (req: AuthRequest, res: Response) => {
+    try {
+        const user = req.user;
+
+        if (user?.role !== 'DISTRICT_ADMIN' || !user.district) {
+            return res.status(403).json({ error: 'Access denied or no district' });
+        }
+
+        // Aggregate BOOKED parcels by destinationZone
+        const suggestions = await prisma.parcel.groupBy({
+            by: ['destinationZone'],
+            where: {
+                destinationDistrict: user.district,
+                status: 'BOOKED',
+                destinationZone: { not: null }
+            },
+            _count: {
+                id: true
+            },
+            orderBy: {
+                destinationZone: 'asc'
+            }
+        });
+
+        // Format result: [{ zone: 'Tirur', count: 12 }]
+        const result = suggestions.map(s => ({
+            zone: s.destinationZone,
+            count: s._count.id
+        }));
+
+        res.json(result);
+
+    } catch (error) {
+        console.error('Smart Suggest Error:', error);
+        res.status(500).json({ error: 'Failed to fetch suggestions' });
+    }
+};

@@ -35,6 +35,7 @@ export const bookParcel = async (req: AuthRequest, res: Response) => {
         // e.g. MAL-PMN-1234
         const distCode = (destinationDistrict || 'KER').substring(0, 3).toUpperCase();
         let areaCode = 'HUB'; // Default
+        let detectedZone = null;
 
         if (destinationArea) {
             const areaRecord = await prisma.area.findFirst({
@@ -43,8 +44,9 @@ export const bookParcel = async (req: AuthRequest, res: Response) => {
                     district: destinationDistrict // Ensure correct district context
                 }
             });
-            if (areaRecord?.code) {
-                areaCode = areaRecord.code;
+            if (areaRecord) {
+                if (areaRecord.code) areaCode = areaRecord.code;
+                if (areaRecord.zone) detectedZone = areaRecord.zone;
             } else {
                 areaCode = destinationArea.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X');
             }
@@ -84,6 +86,7 @@ export const bookParcel = async (req: AuthRequest, res: Response) => {
                 district: shop.district,
                 destinationDistrict,
                 destinationArea,
+                destinationZone: detectedZone,
                 parcelSize,
                 paymentMode,
                 price,

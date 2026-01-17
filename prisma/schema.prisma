@@ -64,6 +64,7 @@ model Parcel {
   district            String   @default("Unknown") // Enforced District Ownership
   destinationDistrict String
   destinationArea     String?  // Target Area
+  destinationZone     String?  // Auto-calculated Zone
   parcelSize          String   // S, M, L
   paymentMode         String   // CASH, UPI
   price               Float

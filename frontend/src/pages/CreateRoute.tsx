@@ -1,13 +1,14 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, Package, Check } from 'lucide-react';
+import { Truck, Package, Check, Lightbulb } from 'lucide-react';
 import client from '../api/client';
 
 const CreateRoute = () => {
     const navigate = useNavigate();
     const [drivers, setDrivers] = useState<any[]>([]);
     const [parcels, setParcels] = useState<any[]>([]);
+    const [suggestions, setSuggestions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -21,12 +22,14 @@ const CreateRoute = () => {
         // Fetch Drivers
         client.get('/drivers').then(res => setDrivers(res.data));
 
-        // Fetch Available Parcels (Status = BOOKED, not yet assigned? Backend logic for "unassigned" needed?)
-        // Currently /parcels returns all. We should filter for 'BOOKED' status in frontend for MVP.
+        // Fetch Available Parcels (Status = BOOKED)
         client.get('/parcels').then(res => {
             const booked = res.data.filter((p: any) => p.status === 'BOOKED');
             setParcels(booked);
         });
+
+        // Fetch Suggestions
+        client.get('/routes/suggestions').then(res => setSuggestions(res.data)).catch(console.error);
     }, []);
 
     const toggleParcel = (id: number) => {
@@ -35,6 +38,23 @@ const CreateRoute = () => {
         } else {
             setSelectedParcels([...selectedParcels, id]);
         }
+    };
+
+    const applySuggestion = (zone: string) => {
+        // 1. Filter parcels for this zone
+        const zoneParcels = parcels.filter(p => p.destinationZone === zone);
+        const zoneParcelIds = zoneParcels.map(p => p.id);
+
+        // 2. Select all of them
+        setSelectedParcels(zoneParcelIds);
+
+        // 3. Pre-fill Name
+        setFormData(prev => ({
+            ...prev,
+            routeName: `${zone} Run - ${new Date().toLocaleDateString()}`
+        }));
+
+        alert(`Selected ${zoneParcelIds.length} parcels for ${zone}`);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -48,7 +68,6 @@ const CreateRoute = () => {
             });
 
             // 2. Assign Parcels
-            // We do this in parallel for speed
             const assignmentPromises = selectedParcels.map(parcelId =>
                 client.post('/routes/assign-parcel', {
                     routeId: route.id,
@@ -74,6 +93,31 @@ const CreateRoute = () => {
                 <h1>Create New Route</h1>
                 <p style={{ color: 'var(--text-dim)' }}>Assign parcels to a driver for delivery.</p>
             </div>
+
+            {/* Smart Suggestions */}
+            {suggestions.length > 0 && (
+                <div style={{ marginBottom: '2rem' }}>
+                    <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fcd34d' }}>
+                        <Lightbulb size={20} />
+                        Smart Suggestions
+                    </h3>
+                    <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                        {suggestions.map((s: any) => (
+                            <div key={s.zone} className="glass-panel" style={{ minWidth: '200px', padding: '1.5rem', background: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.3)' }}>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fbbf24', marginBottom: '0.5rem' }}>{s.zone} Zone</div>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)', marginBottom: '1rem' }}>{s.count} Parcels Pending</div>
+                                <button
+                                    onClick={() => applySuggestion(s.zone)}
+                                    className="btn"
+                                    style={{ width: '100%', background: '#fbbf24', color: 'black', fontWeight: 600, cursor: 'pointer', border: 'none', padding: '0.5rem', borderRadius: '6px' }}
+                                >
+                                    Create Route
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
 
@@ -147,6 +191,8 @@ const CreateRoute = () => {
                                 >
                                     <div>
                                         <div style={{ fontWeight: 600, color: 'white' }}>{parcel.destinationDistrict}</div>
+                                        <div style={{ fontSize: '0.9rem', color: '#fbbf24' }}>{parcel.destinationZone}</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>To: {parcel.destinationArea}</div>
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>From: {parcel.sourceShop?.shopName}</div>
                                     </div>
                                     {selectedParcels.includes(parcel.id) && <div style={{ background: 'var(--primary)', borderRadius: '50%', padding: '2px' }}><Check size={14} color="white" /></div>}
